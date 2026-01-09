@@ -1,0 +1,151 @@
+{
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/master/schemas/workstation-contract.v0.1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "api_version": {
+      "const": "workstation-contracts.socios.io/v0.1",
+      "type": "string"
+    },
+    "kind": {
+      "const": "WorkstationContract",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[a-zA-Z0-9._-]+$",
+          "type": "string"
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "spec": {
+      "additionalProperties": false,
+      "properties": {
+        "lanes": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "backend": {
+                "additionalProperties": false,
+                "properties": {
+                  "container": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "image": {
+                        "minLength": 10,
+                        "type": "string"
+                      },
+                      "workdir": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "image"
+                    ],
+                    "type": "object"
+                  },
+                  "pixi": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "lock_path": {
+                        "type": "string"
+                      },
+                      "manifest_path": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": {
+                    "enum": [
+                      "pixi",
+                      "container"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              },
+              "evidence": {
+                "additionalProperties": false,
+                "properties": {
+                  "emit": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
+              "name": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "steps": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "run": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "name",
+              "backend"
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "lanes"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "api_version",
+    "kind",
+    "metadata",
+    "spec"
+  ],
+  "title": "Workstation Contract v0.1",
+  "type": "object"
+}
