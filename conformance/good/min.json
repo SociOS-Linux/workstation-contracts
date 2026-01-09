@@ -1,0 +1,27 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "conformance-good-min",
+    "name": "Good minimal"
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "dev",
+        "backend": {
+          "type": "pixi",
+          "pixi": {
+            "manifest": "pixi.toml"
+          }
+        },
+        "steps": [
+          {
+            "name": "noop",
+            "run": "echo ok"
+          }
+        ]
+      }
+    ]
+  }
+}

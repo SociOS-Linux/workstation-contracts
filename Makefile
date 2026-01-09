@@ -29,6 +29,17 @@ deps: venv
 validate:
 	$(PY) tools/validate_contract.py examples/pixi-dev.json
 	$(PY) tools/validate_contract.py examples/truth-lane-container.json
+	@for f in conformance/good/*.json; do \
+		echo "VALID (good): $$f"; \
+		$(PY) tools/validate_contract.py "$$f"; \
+	done
+	@for f in conformance/bad/*.json; do \
+		echo "INVALID (bad): $$f"; \
+		if $(PY) tools/validate_contract.py "$$f" >/dev/null 2>&1; then \
+			echo "ERR: expected failure but validated: $$f"; \
+			exit 1; \
+		else \
+			echo "OK: failed as expected: $$f"; \
+		fi; \
+	done
 
-clean:
-	rm -rf $(VENV) __pycache__ .pytest_cache

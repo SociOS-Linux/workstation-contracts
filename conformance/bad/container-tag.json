@@ -1,0 +1,21 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "conformance-bad-container-tag",
+    "name": "Bad container tag pin"
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "truth",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/socios-linux/truth-lane:latest"
+          }
+        }
+      }
+    ]
+  }
+}
