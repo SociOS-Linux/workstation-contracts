@@ -1,13 +1,19 @@
-SHELL := /usr/bin/env bash
+VENV ?= .venv
+PY ?= $(VENV)/bin/python
+PIP ?= $(VENV)/bin/pip
 
-.PHONY: help validate deps
+.PHONY: venv deps validate clean
 
-help:
-	@printf "Targets:\n  make deps      # install validator deps\n  make validate   # validate all example contracts\n"
+venv:
+	python3 -m venv $(VENV)
+	$(PIP) install -U pip setuptools wheel
 
-deps:
-	@python3 -m pip install -U pip >/dev/null
-	@python3 -m pip install jsonschema >/dev/null
+deps: venv
+	$(PIP) install -r requirements.txt
 
 validate:
-	@./tools/validate_contract.py examples/*.json
+	$(PY) tools/validate_contract.py examples/pixi-dev.json
+	$(PY) tools/validate_contract.py examples/truth-lane-container.json
+
+clean:
+	rm -rf $(VENV) __pycache__ .pytest_cache
