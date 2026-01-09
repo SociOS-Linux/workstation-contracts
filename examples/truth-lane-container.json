@@ -1,0 +1,35 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "truth-lane-container",
+    "name": "Truth lane (container)",
+    "description": "Canonical replay lane: pinned image digest."
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "truth",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/socios-linux/truth-lane@sha256:REPLACE_WITH_DIGEST",
+            "workdir": "/work"
+          }
+        },
+        "steps": [
+          {
+            "name": "prove",
+            "run": "uname -a && cat /etc/os-release"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "container.digest",
+            "os.release"
+          ]
+        }
+      }
+    ]
+  }
+}
