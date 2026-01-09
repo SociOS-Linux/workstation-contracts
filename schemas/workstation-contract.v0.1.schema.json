@@ -1,5 +1,5 @@
 {
-  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/master/schemas/workstation-contract.v0.1.schema.json",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workstation-contract.v0.1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
