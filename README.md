@@ -4,6 +4,22 @@ Linux-first contract runner + backend adapters (pixi first) for reproducible wor
 
 Truth lane: linux-amd64-container (pinned digest).
 
+## Topology position
+
+- **Role:** workstation/CI contract and conformance lane.
+- **Connects to:**
+  - `SociOS-Linux/agentos-spine` — Linux-side integration/workspace spine that orchestrates or routes validated lanes
+  - `SourceOS-Linux/sourceos-spec` — canonical typed contracts, JSON-LD contexts, and shared vocabulary
+  - `SociOS-Linux/SourceOS` — immutable substrate whose workstation and CI lanes need typed execution contracts
+  - `SociOS-Linux/socios` — opt-in automation layer that should only execute well-formed, policy-allowed contracts
+  - `SocioProphet/sociosphere` — platform workspace controller that may reuse the same contract posture in broader platform lanes
+- **Not this repo:**
+  - runner or workspace controller
+  - image builder
+  - public docs site
+  - opt-in automation commons
+- **Semantic direction:** this repo should eventually publish a repo-level descriptor that imports the shared SourceOS/SociOS vocabulary from `sourceos-spec` and identifies supported lane types.
+
 ## Scope
 
 This repo defines **contracts** and **conformance** for workstation/CI lanes. It is the stable interface between:
