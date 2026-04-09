@@ -1,0 +1,27 @@
+{
+  "@context": "https://raw.githubusercontent.com/SourceOS-Linux/sourceos-spec/main/semantic/context.jsonld",
+  "@id": "urn:sourceos:repo:SociOS-Linux:workstation-contracts",
+  "@type": ["RepoDescriptor", "Repository"],
+  "name": "workstation-contracts",
+  "description": "Workstation and CI contract / conformance lane for Linux-first execution paths.",
+  "repositoryFullName": "SociOS-Linux/workstation-contracts",
+  "repoUrl": "https://github.com/SociOS-Linux/workstation-contracts",
+  "organization": "SociOS-Linux",
+  "defaultBranch": "main",
+  "semanticDescriptorVersion": "0.1.0",
+  "topologyRole": "roleWorkstationConformanceLane",
+  "connectsTo": [
+    "urn:sourceos:repo:SociOS-Linux:agentos-spine",
+    "urn:sourceos:repo:SourceOS-Linux:sourceos-spec",
+    "urn:sourceos:repo:SociOS-Linux:SourceOS",
+    "urn:sourceos:repo:SociOS-Linux:socios",
+    "urn:sourceos:repo:SocioProphet:sociosphere"
+  ],
+  "consumesVocabularyFrom": "urn:sourceos:repo:SourceOS-Linux:sourceos-spec",
+  "notThisRepo": [
+    "runner or workspace controller",
+    "image builder",
+    "public docs site",
+    "opt-in automation commons"
+  ]
+}
