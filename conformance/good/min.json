@@ -12,7 +12,7 @@
         "backend": {
           "type": "pixi",
           "pixi": {
-            "manifest": "pixi.toml"
+            "manifest_path": "pixi.toml"
           }
         },
         "steps": [
