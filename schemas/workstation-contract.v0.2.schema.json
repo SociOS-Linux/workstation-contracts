@@ -1,0 +1,180 @@
+{
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workstation-contract.v0.2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Workstation Contract v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["api_version", "kind", "metadata", "spec"],
+  "properties": {
+    "api_version": {
+      "const": "workstation-contracts.socios.io/v0.2",
+      "type": "string"
+    },
+    "kind": {
+      "const": "WorkstationContract",
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9._-]+$"
+        },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lanes"],
+      "properties": {
+        "host_platform": {
+          "type": "string",
+          "enum": ["apple-silicon-asahi", "generic-linux", "linux-amd64-container"]
+        },
+        "lanes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "backend"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "backend": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["pixi", "container", "nix"]
+                  },
+                  "pixi": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "manifest_path": { "type": "string" },
+                      "lock_path": { "type": "string" }
+                    }
+                  },
+                  "container": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["image"],
+                    "properties": {
+                      "image": { "type": "string", "minLength": 10 },
+                      "workdir": { "type": "string" }
+                    }
+                  },
+                  "nix": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["flake", "installable"],
+                    "properties": {
+                      "flake": { "type": "string", "minLength": 1 },
+                      "installable": { "type": "string", "minLength": 1 },
+                      "lock_ref": { "type": "string" },
+                      "profile": { "type": "string" }
+                    }
+                  }
+                }
+              },
+              "prerequisites": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "snapshot_capable": { "type": "boolean" },
+                  "rootless_container_required": { "type": "boolean" },
+                  "virtualization": {
+                    "type": "string",
+                    "enum": ["required", "preferred", "off"]
+                  },
+                  "boot_surface_sensitive": { "type": "boolean" }
+                }
+              },
+              "stage": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["environment", "candidate", "smokeRef"],
+                "properties": {
+                  "environment": {
+                    "type": "string",
+                    "enum": ["vm", "nspawn", "container", "remote"]
+                  },
+                  "candidate": { "type": "string" },
+                  "smokeRef": { "type": "string" }
+                }
+              },
+              "mounts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["source", "target", "readOnly", "class"],
+                  "properties": {
+                    "source": { "type": "string" },
+                    "target": { "type": "string" },
+                    "readOnly": { "type": "boolean" },
+                    "class": {
+                      "type": "string",
+                      "enum": ["immutable_input", "mutable_state", "audit_evidence", "substrate_sensitive"]
+                    }
+                  }
+                }
+              },
+              "promotion": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["requiresStagePass", "rollbackStrategy"],
+                "properties": {
+                  "requiresStagePass": { "type": "boolean" },
+                  "requiresHumanApproval": { "type": "boolean" },
+                  "rollbackStrategy": {
+                    "type": "string",
+                    "enum": ["generation", "image_digest", "snapshot", "multi_layer"]
+                  }
+                }
+              },
+              "evidence": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "emit": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "run": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
