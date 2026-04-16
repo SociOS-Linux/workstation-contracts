@@ -1,0 +1,70 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.2",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "fedora-asahi-m2-nix-control-plane",
+    "name": "Fedora Asahi M2 Nix control-plane lane",
+    "description": "Conformance lane for a Fedora Asahi host with a staged Nix and Home Manager control plane.",
+    "labels": {
+      "platform": "apple-silicon-asahi",
+      "lane": "substrate",
+      "stage": "required"
+    }
+  },
+  "spec": {
+    "host_platform": "apple-silicon-asahi",
+    "lanes": [
+      {
+        "name": "substrate-stage-and-promote",
+        "backend": {
+          "type": "nix",
+          "nix": {
+            "flake": "github:SociOS-Linux/SourceOS",
+            "installable": ".#asahi-fedora-m2",
+            "lock_ref": "flake.lock",
+            "profile": "asahi-fedora-m2"
+          }
+        },
+        "prerequisites": {
+          "snapshot_capable": true,
+          "rootless_container_required": true,
+          "virtualization": "preferred",
+          "boot_surface_sensitive": true
+        },
+        "stage": {
+          "environment": "vm",
+          "candidate": "agentplane:bundles/sourceos-asahi-stage",
+          "smokeRef": "agentplane:bundles/sourceos-asahi-stage/smoke"
+        },
+        "mounts": [
+          {
+            "source": "/srv/sourceos/config",
+            "target": "/mnt/config",
+            "readOnly": true,
+            "class": "immutable_input"
+          },
+          {
+            "source": "/srv/sourceos/state/hn-tick",
+            "target": "/mnt/state/hn-tick",
+            "readOnly": false,
+            "class": "mutable_state"
+          },
+          {
+            "source": "/srv/sourceos/evidence",
+            "target": "/mnt/evidence",
+            "readOnly": false,
+            "class": "audit_evidence"
+          }
+        ],
+        "promotion": {
+          "requiresStagePass": true,
+          "requiresHumanApproval": true,
+          "rollbackStrategy": "multi_layer"
+        },
+        "evidence": {
+          "emit": ["stage", "promote", "rollback", "health"]
+        }
+      }
+    ]
+  }
+}
