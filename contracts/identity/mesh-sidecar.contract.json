@@ -1,0 +1,16 @@
+{
+  "name": "mesh-sidecar",
+  "version": "0.1.0",
+  "laneType": "workstation",
+  "truthLane": "linux-amd64-container",
+  "inputs": ["mesh/**"],
+  "requiredTools": ["node", "npm"],
+  "steps": [
+    "node src/sourceos_proof_of_self/mesh/sidecar_hswarm.js --topic <hex> --dir ./mesh"
+  ],
+  "artifacts": ["mesh/incoming/**", "mesh/outgoing/**"],
+  "policy": {
+    "requiresWellFormedContracts": true,
+    "enabledByDefault": false
+  }
+}
