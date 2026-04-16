@@ -1,0 +1,25 @@
+{
+  "id": "urn:srcos:delta-surface:ds_fixture_0001",
+  "type": "DeltaSurface",
+  "specVersion": "2.0.0",
+  "fromRef": "urn:srcos:truth-surface:ts_fixture_0000",
+  "toRef": "urn:srcos:truth-surface:ts_fixture_0001",
+  "createdAt": "2026-04-15T00:01:00Z",
+  "merkleRoot": "sha256:REPLACE_ME",
+  "signer": "fixture",
+  "signature": "sig:REPLACE_ME",
+  "gate": {
+    "status": "permit",
+    "riskScore": 0,
+    "riskThreshold": 30,
+    "humanApprovalRequired": false,
+    "humanApproved": false,
+    "evidenceRequired": ["logs"],
+    "evidencePresent": ["logs"],
+    "evidenceMissing": [],
+    "reasons": []
+  },
+  "refs": {
+    "evidenceBundleRef": "artifact://evidence/run_77cc88dd"
+  }
+}
