@@ -1,0 +1,33 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "truth-plane-fixtures",
+    "name": "Truth plane fixtures validation (local sourceos-spec checkout)",
+    "description": "Validates TruthSurface/DeltaSurface fixtures against SourceOS-Linux/sourceos-spec schemas using a local checkout path (SOURCEOS_SPEC_DIR)."
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "truth-plane",
+        "backend": {
+          "type": "pixi",
+          "pixi": {
+            "manifest_path": "pixi.toml"
+          }
+        },
+        "steps": [
+          {
+            "name": "validate-truth-plane",
+            "run": "python tools/validate_sourceos_truth_plane.py fixtures/sourceos-spec/examples/truth-surface.sample.json fixtures/sourceos-spec/examples/delta-surface.sample.json"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "truth-plane.schema.validation"
+          ]
+        }
+      }
+    ]
+  }
+}
