@@ -1,0 +1,15 @@
+{
+  "name": "identity-renew",
+  "version": "0.1.0",
+  "laneType": "workstation",
+  "truthLane": "linux-amd64-container",
+  "inputs": ["gad.hash"],
+  "requiredTools": ["python3", "ssh-keygen", "openssl"],
+  "steps": [
+    "sourceos-proof-of-self wizard renew --gad gad.hash --subject-pkh-hex <hex>"
+  ],
+  "artifacts": ["renew_pkt/**", "logs/**"],
+  "policy": {
+    "requiresWellFormedContracts": true
+  }
+}

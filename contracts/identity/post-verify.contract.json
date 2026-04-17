@@ -1,0 +1,15 @@
+{
+  "name": "post-verify",
+  "version": "0.1.0",
+  "laneType": "ci",
+  "truthLane": "linux-amd64-container",
+  "inputs": ["PoST.cbor"],
+  "requiredTools": ["python3"],
+  "steps": [
+    "sourceos-proof-of-self post --verify --file PoST.cbor --trust-dir policy/trust"
+  ],
+  "artifacts": ["verify.log"],
+  "policy": {
+    "requiresWellFormedContracts": true
+  }
+}

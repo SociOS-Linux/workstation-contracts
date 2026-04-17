@@ -1,0 +1,15 @@
+{
+  "name": "validator-packet-sign",
+  "version": "0.1.0",
+  "laneType": "workstation",
+  "truthLane": "linux-amd64-container",
+  "inputs": ["pkt/**"],
+  "requiredTools": ["python3", "ssh-keygen", "openssl"],
+  "steps": [
+    "sourceos-proof-of-self packet sign-ssh --packet pkt --ssh-key <key> --ssh-pub <pub> --id <validator>"
+  ],
+  "artifacts": ["pkt/signatures/*.cose"],
+  "policy": {
+    "requiresWellFormedContracts": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "identity-genesis",
+  "version": "0.1.0",
+  "laneType": "workstation",
+  "truthLane": "linux-amd64-container",
+  "inputs": ["gad.hash"],
+  "requiredTools": ["python3", "ssh-keygen", "openssl"],
+  "steps": [
+    "sourceos-proof-of-self wizard genesis --gad gad.hash --subject-pkh-hex <hex>"
+  ],
+  "artifacts": ["genesis_pkt/**", "logs/**"],
+  "policy": {
+    "requiresWellFormedContracts": true,
+    "requiresHumanValidators": 3
+  }
+}

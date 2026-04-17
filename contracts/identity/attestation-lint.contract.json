@@ -1,0 +1,15 @@
+{
+  "name": "attestation-lint",
+  "version": "0.1.0",
+  "laneType": "ci",
+  "truthLane": "linux-amd64-container",
+  "inputs": ["policy/pos_attestation_baseline_silverblue.yaml", "attest_baseline/pcrs.txt"],
+  "requiredTools": ["python3"],
+  "steps": [
+    "sourceos-proof-of-self attest --baseline policy/pos_attestation_baseline_silverblue.yaml --pcrs attest_baseline/pcrs.txt --mode strict"
+  ],
+  "artifacts": ["attest.log"],
+  "policy": {
+    "requiresWellFormedContracts": true
+  }
+}
