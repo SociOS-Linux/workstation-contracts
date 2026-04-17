@@ -1,0 +1,38 @@
+{
+  "contractVersion": "0.1.0",
+  "kind": "fog-node",
+  "lane": "linux-amd64-container",
+  "description": "Conformance stub for a fog-capable workstation/node lane.",
+  "requirements": {
+    "paths": [
+      "/srv/fog/projects",
+      "/srv/fog/models",
+      "/srv/fog/datasets",
+      "/srv/fog/topics",
+      "/srv/fog/vector",
+      "/srv/fog/cache",
+      "/srv/fog/logs",
+      "/srv/fog/secrets",
+      "/srv/fog/tmp"
+    ],
+    "storage": {
+      "requireLvm": true,
+      "minFreeBytes": 10737418240
+    },
+    "runtime": {
+      "requireContainerHost": true,
+      "requireRootlessCapable": true
+    },
+    "metering": {
+      "cpu": true,
+      "memory": true,
+      "io": true,
+      "gpu": false
+    }
+  },
+  "evidence": {
+    "emitOsFingerprint": true,
+    "emitStorageSummary": true,
+    "emitRuntimeSummary": true
+  }
+}
