@@ -7,8 +7,8 @@ Instead, this validator runs against a *local checkout* of SourceOS-Linux/source
 Usage:
   SOURCEOS_SPEC_DIR=~/dev/sourceos-spec \
     python tools/validate_sourceos_truth_plane.py \
-      fixtures/sourceos-spec/examples/truth-surface.sample.json \
-      fixtures/sourceos-spec/examples/delta-surface.sample.json
+      fixtures/sourceos-spec/examples/truth_surface.json \
+      fixtures/sourceos-spec/examples/delta_surface.json
 
 If SOURCEOS_SPEC_DIR is unset, we try common checkout paths:
   - ../sourceos-spec
