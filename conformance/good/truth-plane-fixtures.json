@@ -19,7 +19,7 @@
         "steps": [
           {
             "name": "validate-truth-plane",
-            "run": "python tools/validate_sourceos_truth_plane.py fixtures/sourceos-spec/examples/truth-surface.sample.json fixtures/sourceos-spec/examples/delta-surface.sample.json"
+            "run": "python tools/validate_sourceos_truth_plane.py fixtures/sourceos-spec/examples/truth_surface.json fixtures/sourceos-spec/examples/delta_surface.json"
           }
         ],
         "evidence": {
