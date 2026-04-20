@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/m2-ipc/envelope.schema.json",
+  "title": "M2 IPC Envelope v1.0",
+  "type": "object",
+  "required": ["id", "op", "protocol"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "op": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protocol": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "ts": {
+      "type": "string"
+    },
+    "lane": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "role": {
+      "type": "string"
+    },
+    "task": {
+      "type": "string"
+    },
+    "ci_mode": {
+      "type": "boolean"
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "result": {
+      "type": ["object", "array", "string", "number", "boolean", "null"]
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {"type": "string"},
+          "message": {"type": "string"},
+          "details": {"type": "object", "additionalProperties": true}
+        },
+        "additionalProperties": true
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": ["object", "string"]
+      }
+    }
+  },
+  "additionalProperties": true
+}
