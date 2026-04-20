@@ -1,0 +1,57 @@
+{
+  "$id": "https://schemas.socios.dev/m2-ipc/envelope.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M2IPCEnvelope",
+  "type": "object",
+  "required": [
+    "id",
+    "op"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "op": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protocol_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "lane": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "result": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": true
+}
