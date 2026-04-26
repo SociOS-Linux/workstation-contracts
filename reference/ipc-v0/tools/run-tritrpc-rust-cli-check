@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Run or dry-run the TritRPC Rust CLI fixture check.
+
+Default mode validates the pinned fixture-reference metadata and emits a receipt.
+Execution mode runs a caller-supplied local `trpc verify` command against caller-supplied
+fixture and nonce paths. This script does not fetch external fixtures and does not copy
+fixture bytes into workstation-contracts.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+HARNESS_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_MANIFEST = HARNESS_ROOT / "fixtures" / "tritrpc-v1-fixture-reference.json"
+DEFAULT_RECEIPT = HARNESS_ROOT / ".workstation" / "test-reports" / "tritrpc-rust-cli-check.json"
+
+
+def fail(message: str) -> None:
+    print(f"[run-tritrpc-rust-cli-check] ERROR: {message}", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def load_manifest(path: Path) -> dict:
+    if not path.exists():
+        fail(f"manifest not found: {path}")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        fail(f"invalid manifest JSON: {exc}")
+
+
+def validate_manifest(data: dict) -> dict:
+    source = data.get("source") or {}
+    if data.get("kind") != "TriTRPCFixtureReference":
+        fail("unexpected fixture reference kind")
+    if source.get("repository") != "SocioProphet/TriTRPC":
+        fail("unexpected fixture repository")
+    if source.get("path") != "fixtures/vectors_hex_unary_rich.txt":
+        fail("unexpected fixture path")
+    if source.get("noncePath") != "fixtures/vectors_hex_unary_rich.txt.nonces":
+        fail("unexpected nonce path")
+    return {
+        "repository": source["repository"],
+        "commit": source["commit"],
+        "fixturePath": source["path"],
+        "noncePath": source["noncePath"],
+    }
+
+
+def write_receipt(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(prog="run-tritrpc-rust-cli-check")
+    parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
+    parser.add_argument("--receipt", default=str(DEFAULT_RECEIPT))
+    parser.add_argument("--trpc", default="", help="Local Rust trpc binary path. Required for --execute.")
+    parser.add_argument("--fixtures", default="", help="Local fixtures file path. Required for --execute.")
+    parser.add_argument("--nonces", default="", help="Local nonce file path. Required for --execute.")
+    parser.add_argument("--execute", action="store_true", help="Run trpc verify instead of metadata-only dry run.")
+    args = parser.parse_args()
+
+    manifest_path = Path(args.manifest)
+    receipt_path = Path(args.receipt)
+    meta = validate_manifest(load_manifest(manifest_path))
+
+    receipt = {
+        "apiVersion": "workstation-contracts.socios.ai/ipc-v0",
+        "kind": "TritRPCRustCLICheckReceipt",
+        "mode": "dry-run",
+        "manifest": str(manifest_path),
+        "source": meta,
+        "status": "pass",
+    }
+
+    if args.execute:
+        if not args.trpc or not args.fixtures or not args.nonces:
+            fail("--execute requires --trpc, --fixtures, and --nonces")
+        trpc_path = Path(args.trpc)
+        fixtures_path = Path(args.fixtures)
+        nonces_path = Path(args.nonces)
+        if not trpc_path.exists():
+            fail(f"trpc binary not found: {trpc_path}")
+        if not fixtures_path.exists():
+            fail(f"fixtures file not found: {fixtures_path}")
+        if not nonces_path.exists():
+            fail(f"nonces file not found: {nonces_path}")
+
+        cmd = [str(trpc_path), "verify", "--fixtures", str(fixtures_path), "--nonces", str(nonces_path)]
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        receipt.update(
+            {
+                "mode": "execute",
+                "command": cmd,
+                "stdout": proc.stdout,
+                "stderr": proc.stderr,
+                "exitCode": proc.returncode,
+                "status": "pass" if proc.returncode == 0 else "fail",
+            }
+        )
+        write_receipt(receipt_path, receipt)
+        return proc.returncode
+
+    write_receipt(receipt_path, receipt)
+    print(json.dumps(receipt, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
