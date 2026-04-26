@@ -1,0 +1,67 @@
+name: IPC TritRPC execute conformance
+
+on:
+  pull_request:
+    paths:
+      - 'reference/ipc-v0/**'
+      - 'docs/specs/ipc-v0**'
+      - '.github/workflows/tritrpc-exec-conformance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tritrpc-exec-conformance:
+    runs-on: ubuntu-latest
+    env:
+      TRITRPC_REPO: https://github.com/SocioProphet/TriTRPC.git
+      TRITRPC_COMMIT: 58741244057ed1346676c7b95c9a1ec940f12952
+      TRITRPC_DIR: ${{ github.workspace }}/_deps/TriTRPC
+      IPC_DIR: ${{ github.workspace }}/reference/ipc-v0
+    steps:
+      - name: Checkout workstation-contracts
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned TriTRPC source
+        run: |
+          set -euo pipefail
+          mkdir -p "$(dirname "$TRITRPC_DIR")"
+          git clone "$TRITRPC_REPO" "$TRITRPC_DIR"
+          cd "$TRITRPC_DIR"
+          git checkout "$TRITRPC_COMMIT"
+          test "$(git rev-parse HEAD)" = "$TRITRPC_COMMIT"
+
+      - name: Build TritRPC Rust CLI
+        run: |
+          set -euo pipefail
+          cd "$TRITRPC_DIR"
+          cargo build -p tritrpc_v1 --bin trpc
+          test -x "$TRITRPC_DIR/target/debug/trpc"
+
+      - name: Run IPC reference tests
+        run: |
+          set -euo pipefail
+          cd "$IPC_DIR"
+          tools/run-tests
+
+      - name: Run IPC bridge execute-mode fixture verification
+        run: |
+          set -euo pipefail
+          cd "$IPC_DIR"
+          python -m src.contract_runner.runner \
+            --adapter "python -m src.adapters.tritrpc_bridge_adapter" \
+            --out .workstation/reports/ipc-tritrpc-exec \
+            --op tritrpc.fixture.verify \
+            --args-json "{\"execute\":true,\"trpc\":\"$TRITRPC_DIR/target/debug/trpc\",\"fixtures\":\"$TRITRPC_DIR/fixtures/vectors_hex_unary_rich.txt\",\"nonces\":\"$TRITRPC_DIR/fixtures/vectors_hex_unary_rich.txt.nonces\",\"receipt\":\".workstation/test-reports/tritrpc-rust-cli-check-exec.json\"}"
+          test -f .workstation/reports/ipc-tritrpc-exec/run-receipt.json
+          test -f .workstation/test-reports/tritrpc-rust-cli-check-exec.json
+
+      - name: Show receipts
+        if: always()
+        run: |
+          set -euo pipefail
+          cd "$IPC_DIR"
+          find .workstation -type f -maxdepth 5 -print | sort
+          cat .workstation/reports/ipc-tritrpc-exec/run-receipt.json || true
+          cat .workstation/test-reports/tritrpc-rust-cli-check-exec.json || true
