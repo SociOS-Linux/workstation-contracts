@@ -7,6 +7,7 @@ import re
 import sys
 from pathlib import Path
 
+HARNESS_ROOT = Path(__file__).resolve().parents[1]
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 REQUIRED_LABELS = {
     "hyper.v1.AddVertex_a.REQ",
@@ -18,6 +19,13 @@ REQUIRED_LABELS = {
 def fail(message: str) -> None:
     print(f"[check-fixture-reference] ERROR: {message}", file=sys.stderr)
     raise SystemExit(2)
+
+
+def resolve_path(raw: str) -> Path:
+    path = Path(raw)
+    if path.is_absolute():
+        return path
+    return HARNESS_ROOT / path
 
 
 def validate(data: dict) -> dict:
@@ -51,21 +59,21 @@ def validate(data: dict) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--manifest", default="reference/ipc-v0/fixtures/tritrpc-v1-fixture-reference.json")
-    parser.add_argument("--receipt", default="reference/ipc-v0/.workstation/test-reports/fixture-reference-check.json")
+    parser.add_argument("--manifest", default="fixtures/tritrpc-v1-fixture-reference.json")
+    parser.add_argument("--receipt", default=".workstation/test-reports/fixture-reference-check.json")
     args = parser.parse_args()
-    manifest = Path(args.manifest)
+    manifest = resolve_path(args.manifest)
     if not manifest.exists():
         fail(f"manifest not found: {manifest}")
     result = validate(json.loads(manifest.read_text(encoding="utf-8")))
-    receipt_path = Path(args.receipt)
+    receipt_path = resolve_path(args.receipt)
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
     receipt = {
         "apiVersion": "workstation-contracts.socios.ai/ipc-v0",
         "kind": "FixtureReferenceCheckReceipt",
-        "manifest": str(manifest),
+        "manifest": str(manifest.relative_to(HARNESS_ROOT)),
         **result,
-        "receipt": str(receipt_path),
+        "receipt": str(receipt_path.relative_to(HARNESS_ROOT)),
     }
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(receipt, indent=2, sort_keys=True))
