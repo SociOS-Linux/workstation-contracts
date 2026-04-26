@@ -184,14 +184,31 @@ def invoke(writer: NDJSONWriter, reader: NDJSONReader, op: str, args: dict[str, 
     raise RuntimeError("adapter process ended before replying")
 
 
+def load_invoke_args(args_json: str | None, args_file: str | None, text: str) -> dict[str, Any]:
+    if args_json and args_file:
+        raise ValueError("use only one of --args-json or --args-file")
+    if args_file:
+        payload = json.loads(Path(args_file).read_text(encoding="utf-8"))
+    elif args_json:
+        payload = json.loads(args_json)
+    else:
+        payload = {"text": text}
+    if not isinstance(payload, dict):
+        raise ValueError("invoke args must decode to a JSON object")
+    return payload
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="ipc-v0-reference-runner")
     parser.add_argument("--adapter", required=True, help="Adapter command, e.g. 'python -m src.adapters.caps_adapter'")
     parser.add_argument("--out", default=".workstation/reports/ipc", help="Output directory for receipts")
     parser.add_argument("--op", default="text.caps")
     parser.add_argument("--text", default="hello world")
+    parser.add_argument("--args-json", default=None, help="Explicit JSON object passed as invoke args")
+    parser.add_argument("--args-file", default=None, help="Path to JSON object passed as invoke args")
     args = parser.parse_args()
 
+    invoke_args = load_invoke_args(args.args_json, args.args_file, args.text)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     transcript_path = out_dir / "ipc-transcript.ndjson"
@@ -205,7 +222,7 @@ def main() -> int:
         writer = NDJSONWriter(proc.stdin, transcript_fp=transcript_fp)
         reader = NDJSONReader(proc.stdout, transcript_fp=transcript_fp)
         caps = handshake(writer, reader, requested_caps=[args.op])
-        result = invoke(writer, reader, op=args.op, args={"text": args.text})
+        result = invoke(writer, reader, op=args.op, args=invoke_args)
 
     proc.terminate()
     try:
@@ -219,7 +236,7 @@ def main() -> int:
         "ts": now_rfc3339(),
         "adapter": adapter_cmd,
         "capabilities": caps,
-        "invocation": {"op": args.op, "args": {"text": args.text}},
+        "invocation": {"op": args.op, "args": invoke_args},
         "result": result,
         "exitCode": proc.returncode,
         "transcript": str(transcript_path),
