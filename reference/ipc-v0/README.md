@@ -7,6 +7,7 @@ It is deliberately scoped as a conformance harness:
 - it demonstrates the NDJSON stdin/stdout handshake
 - it emits deterministic transcript and run receipts
 - it includes a small `text.caps` adapter for round-trip tests
+- it includes a TritRPC bridge skeleton adapter for remote-transport shape tests
 - it does not claim to be the production workspace runner or orchestrator
 
 ## Quick run
@@ -20,6 +21,15 @@ python -m src.contract_runner.runner \
   --text "hello"
 ```
 
+TritRPC bridge skeleton run:
+
+```bash
+python -m src.contract_runner.runner \
+  --adapter "python -m src.adapters.tritrpc_bridge_adapter" \
+  --op remote.echo \
+  --text "hello"
+```
+
 Outputs are written under:
 
 ```text
@@ -29,9 +39,11 @@ Outputs are written under:
 ## Test
 
 ```bash
-python -m pytest
+tools/run-tests
 ```
 
 ## Boundary
 
 The production runner/workspace controller may import these semantics, but this directory is only the reference conformance surface for `docs/specs/ipc-v0.md` and `schemas/ipc/v0/envelope.schema.json`.
+
+The TritRPC bridge adapter is skeleton-only. It proves IPC-side capability declaration and invocation mapping for a future real TritRPC client; it does not open network connections.
