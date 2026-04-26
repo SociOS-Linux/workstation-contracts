@@ -5,8 +5,10 @@ exists to prove the IPC-side adapter shape for future TritRPC integration.
 
 Supported operations:
 - remote.echo: skeleton remote call shape
-- tritrpc.fixture.verify: invokes the local Rust CLI wrapper helper in dry-run
+- tritrpc.fixture.verify: invokes the local Rust CLI verify helper in dry-run
   mode by default, or execute mode when explicit local paths are provided
+- tritrpc.frame.pack: invokes the local Rust CLI pack helper in dry-run mode by
+  default, or execute mode when explicit local paths/nonce/key are provided
 """
 
 from __future__ import annotations
@@ -21,7 +23,8 @@ from typing import Any
 
 IPC_VERSION = "ipc.v0"
 HARNESS_ROOT = Path(__file__).resolve().parents[2]
-WRAPPER = HARNESS_ROOT / "tools" / "run-tritrpc-rust-cli-check"
+VERIFY_WRAPPER = HARNESS_ROOT / "tools" / "run-tritrpc-rust-cli-check"
+PACK_WRAPPER = HARNESS_ROOT / "tools" / "run-tritrpc-frame-pack-check"
 
 
 def now_rfc3339() -> str:
@@ -61,7 +64,7 @@ def send_capabilities() -> None:
             "ts": now_rfc3339(),
             "type": "capabilities",
             "payload": {
-                "adapter": {"name": "tritrpc-bridge-adapter", "version": "0.2.0"},
+                "adapter": {"name": "tritrpc-bridge-adapter", "version": "0.3.0"},
                 "capabilities": [
                     {
                         "name": "remote.echo",
@@ -78,6 +81,14 @@ def send_capabilities() -> None:
                         "wrapper": "tools/run-tritrpc-rust-cli-check",
                         "network": False,
                     },
+                    {
+                        "name": "tritrpc.frame.pack",
+                        "sideEffects": "filesystem",
+                        "timeouts": {"defaultMs": 30000},
+                        "remote": {"protocol": "tritrpc", "method": "frame.pack"},
+                        "wrapper": "tools/run-tritrpc-frame-pack-check",
+                        "network": False,
+                    },
                 ],
             },
         }
@@ -85,7 +96,7 @@ def send_capabilities() -> None:
 
 
 def run_fixture_verify(args: dict[str, Any]) -> dict[str, Any]:
-    cmd = [sys.executable, str(WRAPPER)]
+    cmd = [sys.executable, str(VERIFY_WRAPPER)]
     receipt = args.get("receipt") or ".workstation/test-reports/tritrpc-rust-cli-check-adapter.json"
     cmd += ["--receipt", str(receipt)]
 
@@ -103,14 +114,42 @@ def run_fixture_verify(args: dict[str, Any]) -> dict[str, Any]:
             str(args["nonces"]),
         ]
 
+    return run_wrapper(cmd, receipt, "execute" if args.get("execute") else "dry-run")
+
+
+def run_frame_pack(args: dict[str, Any]) -> dict[str, Any]:
+    cmd = [sys.executable, str(PACK_WRAPPER)]
+    receipt = args.get("receipt") or ".workstation/test-reports/tritrpc-frame-pack-check-adapter.json"
+    cmd += ["--receipt", str(receipt)]
+
+    for key in ["service", "method", "json"]:
+        if not args.get(key):
+            raise ValueError(f"tritrpc.frame.pack requires {key}")
+    cmd += ["--service", str(args["service"]), "--method", str(args["method"]), "--json", str(args["json"])]
+
+    if args.get("nonce"):
+        cmd += ["--nonce", str(args["nonce"])]
+    if args.get("key"):
+        cmd += ["--key", str(args["key"])]
+
+    if args.get("execute"):
+        if not args.get("trpc"):
+            raise ValueError("execute mode requires trpc")
+        cmd += ["--execute", "--trpc", str(args["trpc"])]
+
+    return run_wrapper(cmd, receipt, "execute" if args.get("execute") else "dry-run")
+
+
+def run_wrapper(cmd: list[str], receipt: str, mode: str) -> dict[str, Any]:
     proc = subprocess.run(cmd, cwd=HARNESS_ROOT, capture_output=True, text=True, check=False)
+    safe_cmd = ["<redacted>" if part and len(part) == 64 and all(c in "0123456789abcdefABCDEF" for c in part) else part for part in cmd]
     data: dict[str, Any] = {
-        "command": cmd,
+        "command": safe_cmd,
         "exitCode": proc.returncode,
         "stdout": proc.stdout,
         "stderr": proc.stderr,
         "receipt": str(receipt),
-        "mode": "execute" if args.get("execute") else "dry-run",
+        "mode": mode,
     }
     if proc.returncode != 0:
         data["ok"] = False
@@ -196,16 +235,18 @@ def main() -> int:
                 if not data.get("ok"):
                     send_error(msg_id, "TRITRPC_FIXTURE_VERIFY_FAILED", "fixture verify wrapper failed", data, retryable=False)
                     continue
-                send(
-                    {
-                        "v": IPC_VERSION,
-                        "id": new_id(),
-                        "ts": now_rfc3339(),
-                        "type": "result",
-                        "replyTo": msg_id,
-                        "payload": {"ok": True, "data": data},
-                    }
-                )
+                send({"v": IPC_VERSION, "id": new_id(), "ts": now_rfc3339(), "type": "result", "replyTo": msg_id, "payload": {"ok": True, "data": data}})
+                continue
+            if op == "tritrpc.frame.pack":
+                try:
+                    data = run_frame_pack(args)
+                except Exception as exc:
+                    send_error(msg_id, "TRITRPC_FRAME_PACK_FAILED", str(exc), retryable=False)
+                    continue
+                if not data.get("ok"):
+                    send_error(msg_id, "TRITRPC_FRAME_PACK_FAILED", "frame pack wrapper failed", data, retryable=False)
+                    continue
+                send({"v": IPC_VERSION, "id": new_id(), "ts": now_rfc3339(), "type": "result", "replyTo": msg_id, "payload": {"ok": True, "data": data}})
                 continue
             send_error(msg_id, "ADAPTER_NO_SUCH_OP", "unknown op", {"op": op})
             continue
