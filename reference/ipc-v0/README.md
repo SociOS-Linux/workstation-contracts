@@ -10,6 +10,7 @@ It is deliberately scoped as a conformance harness:
 - it includes a TritRPC bridge skeleton adapter for remote-transport shape tests
 - it includes a dry-run-capable TritRPC Rust CLI wrapper check
 - it exposes `tritrpc.fixture.verify` through the bridge adapter as a codec-wrapper operation
+- it supports explicit JSON invoke arguments via `--args-json` or `--args-file`
 - it does not claim to be the production workspace runner or orchestrator
 
 ## Quick run
@@ -38,7 +39,16 @@ TritRPC fixture verify IPC operation, dry-run wrapper mode:
 python -m src.contract_runner.runner \
   --adapter "python -m src.adapters.tritrpc_bridge_adapter" \
   --op tritrpc.fixture.verify \
-  --text "dry-run"
+  --args-json '{"receipt":".workstation/test-reports/tritrpc-rust-cli-check-ipc.json"}'
+```
+
+TritRPC fixture verify IPC operation, execute mode with explicit local paths:
+
+```bash
+python -m src.contract_runner.runner \
+  --adapter "python -m src.adapters.tritrpc_bridge_adapter" \
+  --op tritrpc.fixture.verify \
+  --args-json '{"execute":true,"trpc":"/path/to/trpc","fixtures":"/path/to/TriTRPC/fixtures/vectors_hex_unary_rich.txt","nonces":"/path/to/TriTRPC/fixtures/vectors_hex_unary_rich.txt.nonces"}'
 ```
 
 TritRPC Rust CLI metadata dry-run:
@@ -77,4 +87,4 @@ The TritRPC bridge adapter is skeleton-only. It proves IPC-side capability decla
 
 The Rust CLI check is a codec-wrapper conformance helper. It does not fetch external fixtures and does not vendor TriTRPC fixture bytes.
 
-The `tritrpc.fixture.verify` IPC operation shells out to the local Rust CLI check helper. Its default mode validates pinned metadata only. Execute mode still requires explicit local paths supplied through the helper; no network transport is introduced here.
+The `tritrpc.fixture.verify` IPC operation shells out to the local Rust CLI check helper. Its default mode validates pinned metadata only. Execute mode requires explicit local paths supplied through the invoke arguments; no network transport is introduced here.
