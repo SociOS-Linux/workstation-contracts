@@ -30,9 +30,42 @@ This repo defines **contracts** and **conformance** for workstation/CI lanes. It
 
 If you need to *run* a lane, you’re looking for the workspace controller / runner repo, not this one.
 
+## IPC v0 reference harness
+
+This repo now includes a small IPC v0 reference harness under:
+
+```text
+reference/ipc-v0/
+```
+
+The harness exists for conformance and protocol testing only. It demonstrates:
+
+- NDJSON stdin/stdout runner↔adapter transport
+- hello/capabilities handshake
+- a minimal `text.caps` adapter
+- deterministic `ipc-transcript.ndjson`
+- deterministic `run-receipt.json`
+
+Run it from `reference/ipc-v0/`:
+
+```bash
+python -m src.contract_runner.runner \
+  --adapter "python -m src.adapters.caps_adapter" \
+  --op text.caps \
+  --text "hello"
+```
+
+Run its tests:
+
+```bash
+reference/ipc-v0/tools/run-tests
+```
+
+The production runner/orchestrator remains out of scope for this repo. The reference harness is a runnable conformance fixture for `docs/specs/ipc-v0.md` and `schemas/ipc/v0/envelope.schema.json`.
+
 ## Non-goals
 
-- Implementing the runner/orchestrator (execution belongs elsewhere)
+- Implementing the production runner/orchestrator (execution belongs elsewhere)
 - Hosting container images (this repo only **pins** digests once published)
 - Being a monorepo for all workstation tooling (we stay small and auditable)
 
