@@ -1,0 +1,7 @@
+{
+  "op": "AddVertex",
+  "vertex": {
+    "vid": "a",
+    "label": "A"
+  }
+}

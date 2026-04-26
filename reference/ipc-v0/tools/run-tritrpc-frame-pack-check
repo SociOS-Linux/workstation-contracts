@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""Run or dry-run the TritRPC Rust CLI frame pack operation.
+
+Default mode validates requested service/method/payload metadata and emits a receipt.
+Execute mode runs caller-supplied local `trpc pack` with explicit paths/nonce/key.
+This script does not fetch fixtures, does not vendor fixture bytes, and does not open
+network connections.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+HARNESS_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_RECEIPT = HARNESS_ROOT / ".workstation" / "test-reports" / "tritrpc-frame-pack-check.json"
+
+
+def fail(message: str) -> None:
+    print(f"[run-tritrpc-frame-pack-check] ERROR: {message}", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def validate_hex(value: str, expected_len: int, label: str) -> None:
+    if len(value) != expected_len * 2:
+        fail(f"{label} must be {expected_len} bytes encoded as hex")
+    try:
+        bytes.fromhex(value)
+    except ValueError:
+        fail(f"{label} must be valid hex")
+
+
+def write_receipt(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(prog="run-tritrpc-frame-pack-check")
+    parser.add_argument("--receipt", default=str(DEFAULT_RECEIPT))
+    parser.add_argument("--service", required=True)
+    parser.add_argument("--method", required=True)
+    parser.add_argument("--json", dest="json_path", required=True)
+    parser.add_argument("--nonce", default="00" * 24)
+    parser.add_argument("--key", default="00" * 32)
+    parser.add_argument("--trpc", default="", help="Local Rust trpc binary path. Required for --execute.")
+    parser.add_argument("--execute", action="store_true")
+    args = parser.parse_args()
+
+    payload_path = Path(args.json_path)
+    if not payload_path.exists():
+        fail(f"payload JSON not found: {payload_path}")
+    validate_hex(args.nonce, 24, "nonce")
+    validate_hex(args.key, 32, "key")
+
+    receipt_path = Path(args.receipt)
+    receipt = {
+        "apiVersion": "workstation-contracts.socios.ai/ipc-v0",
+        "kind": "TritRPCFramePackCheckReceipt",
+        "mode": "dry-run",
+        "service": args.service,
+        "method": args.method,
+        "jsonPath": str(payload_path),
+        "nonceHex": args.nonce,
+        "keyHexRedacted": "<redacted>",
+        "status": "pass",
+    }
+
+    if args.execute:
+        if not args.trpc:
+            fail("--execute requires --trpc")
+        trpc_path = Path(args.trpc)
+        if not trpc_path.exists():
+            fail(f"trpc binary not found: {trpc_path}")
+        cmd = [
+            str(trpc_path),
+            "pack",
+            "--service",
+            args.service,
+            "--method",
+            args.method,
+            "--json",
+            str(payload_path),
+            "--nonce",
+            args.nonce,
+            "--key",
+            args.key,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        receipt.update(
+            {
+                "mode": "execute",
+                "command": [part if part != args.key else "<redacted>" for part in cmd],
+                "stdout": proc.stdout,
+                "stderr": proc.stderr,
+                "exitCode": proc.returncode,
+                "status": "pass" if proc.returncode == 0 else "fail",
+            }
+        )
+        write_receipt(receipt_path, receipt)
+        return proc.returncode
+
+    write_receipt(receipt_path, receipt)
+    print(json.dumps(receipt, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
