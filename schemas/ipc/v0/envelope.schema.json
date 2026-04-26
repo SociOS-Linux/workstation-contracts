@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.socios.ai/ipc/v0/envelope.schema.json",
+  "title": "IPC v0 Envelope",
+  "type": "object",
+  "required": ["v", "id", "ts", "type", "payload"],
+  "properties": {
+    "v": {"const": "ipc.v0"},
+    "id": {"type": "string", "minLength": 8},
+    "ts": {"type": "string", "format": "date-time"},
+    "type": {"type": "string", "minLength": 1},
+    "replyTo": {"type": "string"},
+    "trace": {
+      "type": "object",
+      "properties": {
+        "traceId": {"type": "string"},
+        "spanId": {"type": "string"},
+        "parentSpanId": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "payload": {"type": "object"}
+  },
+  "additionalProperties": false
+}
