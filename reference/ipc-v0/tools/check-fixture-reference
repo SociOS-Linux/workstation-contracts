@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+REQUIRED_LABELS = {
+    "hyper.v1.AddVertex_a.REQ",
+    "hyper.v1.AddVertex_a.RSP",
+    "hyper.v1.QueryNeighbors_a_k1.REQ",
+}
+
+
+def fail(message: str) -> None:
+    print(f"[check-fixture-reference] ERROR: {message}", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def validate(data: dict) -> dict:
+    if data.get("kind") != "TriTRPCFixtureReference":
+        fail("unexpected kind")
+    source = data.get("source") or {}
+    if source.get("repository") != "SocioProphet/TriTRPC":
+        fail("unexpected repository")
+    commit = source.get("commit") or ""
+    if not SHA_RE.match(commit):
+        fail("commit must be a 40-character lowercase SHA")
+    if source.get("path") != "fixtures/vectors_hex_unary_rich.txt":
+        fail("unexpected fixture path")
+    if source.get("noncePath") != "fixtures/vectors_hex_unary_rich.txt.nonces":
+        fail("unexpected nonce path")
+    labels = set(data.get("expectedLabels") or [])
+    missing = sorted(REQUIRED_LABELS - labels)
+    if missing:
+        fail(f"missing labels: {missing}")
+    notes = "\n".join(data.get("notes") or [])
+    if "remain owned by SocioProphet/TriTRPC" not in notes:
+        fail("ownership note missing")
+    return {
+        "repository": source["repository"],
+        "commit": commit,
+        "path": source["path"],
+        "labelsChecked": sorted(REQUIRED_LABELS),
+        "status": "pass",
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--manifest", default="reference/ipc-v0/fixtures/tritrpc-v1-fixture-reference.json")
+    parser.add_argument("--receipt", default="reference/ipc-v0/.workstation/test-reports/fixture-reference-check.json")
+    args = parser.parse_args()
+    manifest = Path(args.manifest)
+    if not manifest.exists():
+        fail(f"manifest not found: {manifest}")
+    result = validate(json.loads(manifest.read_text(encoding="utf-8")))
+    receipt_path = Path(args.receipt)
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt = {
+        "apiVersion": "workstation-contracts.socios.ai/ipc-v0",
+        "kind": "FixtureReferenceCheckReceipt",
+        "manifest": str(manifest),
+        **result,
+        "receipt": str(receipt_path),
+    }
+    receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(json.dumps(receipt, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
