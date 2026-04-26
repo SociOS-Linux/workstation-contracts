@@ -1,0 +1,28 @@
+{
+  "apiVersion": "workstation-contracts.socios.ai/ipc-v0",
+  "kind": "TriTRPCFixtureReference",
+  "source": {
+    "repository": "SocioProphet/TriTRPC",
+    "commit": "58741244057ed1346676c7b95c9a1ec940f12952",
+    "path": "fixtures/vectors_hex_unary_rich.txt",
+    "noncePath": "fixtures/vectors_hex_unary_rich.txt.nonces"
+  },
+  "purpose": "Reference canonical TritRPC v1 frame fixtures without duplicating fixture vectors into workstation-contracts.",
+  "expectedLabels": [
+    "hyper.v1.AddVertex_a.REQ",
+    "hyper.v1.AddVertex_a.RSP",
+    "hyper.v1.AddHyperedge_e1_ab.REQ",
+    "hyper.v1.QueryNeighbors_a_k1.REQ",
+    "hyper.v1.GetSubgraph_a_k1.RSP"
+  ],
+  "binding": {
+    "ipcProtocol": "ipc.v0",
+    "bridgeAdapter": "reference/ipc-v0/src/adapters/tritrpc_bridge_adapter.py",
+    "contractDoc": "docs/specs/ipc-v0-tritrpc-v1-binding-contract.md"
+  },
+  "notes": [
+    "TritRPC v1 fixture vectors remain owned by SocioProphet/TriTRPC.",
+    "workstation-contracts references the fixture commit/path for adapter conformance planning only.",
+    "No network transport binding is implied by this reference."
+  ]
+}
