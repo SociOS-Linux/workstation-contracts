@@ -1,0 +1,60 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "agent-machine-office-dry-run",
+    "name": "Agent Machine and Office Plane dry-run conformance lane",
+    "description": "Conformance fixture for SourceOS Agent Machine scoped mounts and Prophet Workspace Office Plane dry-run behavior.",
+    "labels": {
+      "sourceos.capability": "agent-machine-office",
+      "sourceos.agent_machine": "true",
+      "sourceos.office_plane": "true"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "agent-machine-office-dry-run",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "plan-scoped-agent-machine-mounts",
+            "run": "sourceosctl agent-machine mounts plan --dev-root ~/dev --docs-root ~/Documents/SourceOS/agent-output --downloads-root ~/Downloads/SourceOS/agent-downloads"
+          },
+          {
+            "name": "inspect-office-backends",
+            "run": "sourceosctl office doctor"
+          },
+          {
+            "name": "plan-office-deck-generation",
+            "run": "sourceosctl office generate --dry-run --artifact-type slide-deck --format pptx --title 'Demo Briefing Deck' --workroom-id workroom-demo-0001"
+          },
+          {
+            "name": "plan-office-pdf-conversion",
+            "run": "sourceosctl office convert /workspace/output/demo.docx --to pdf --dry-run --workroom-id workroom-demo-0001"
+          },
+          {
+            "name": "record-agentterm-office-event",
+            "run": "agent-term office create-deck '!prophet-workspace' --workroom workroom-demo-0001 --title 'Demo Briefing Deck'"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "env.fingerprint",
+            "agent-machine.mount.plan",
+            "agent-machine.mount.evidence",
+            "office.artifact.plan",
+            "office.artifact.evidence",
+            "agentterm.office.event"
+          ]
+        }
+      }
+    ]
+  }
+}
