@@ -1,0 +1,35 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "agent-machine-whole-home-mount",
+    "name": "Invalid Agent Machine whole home mount",
+    "description": "This fixture must fail because Agent Machine must never mount $HOME wholesale.",
+    "labels": {
+      "sourceos.agent_machine": "true"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "invalid-whole-home-mount",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "bad-whole-home-mount",
+            "run": "sourceosctl agent-machine mounts plan --dev-root $HOME --docs-root ~/Documents/SourceOS/agent-output --downloads-root ~/Downloads/SourceOS/agent-downloads"
+          }
+        ],
+        "evidence": {
+          "emit": ["agent-machine.mount.plan"]
+        }
+      }
+    ]
+  }
+}
