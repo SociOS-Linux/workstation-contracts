@@ -1,0 +1,35 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "office-raw-apple-app-db",
+    "name": "Invalid raw Apple app database access",
+    "description": "This fixture must fail because Notes, Photos, Reminders, and Voice Memos must be App Doors, not default raw database mounts.",
+    "labels": {
+      "sourceos.office_plane": "true"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "invalid-raw-apple-app-db",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "bad-raw-notes-db-access",
+            "run": "sourceosctl office inspect ~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite"
+          }
+        ],
+        "evidence": {
+          "emit": ["office.artifact.evidence"]
+        }
+      }
+    ]
+  }
+}

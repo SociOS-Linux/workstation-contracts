@@ -30,6 +30,41 @@ This repo defines **contracts** and **conformance** for workstation/CI lanes. It
 
 If you need to *run* a lane, you’re looking for the workspace controller / runner repo, not this one.
 
+## Agent Machine and Office Plane conformance
+
+This repo now includes conformance fixtures for SourceOS Agent Machine scoped mounts and Prophet Workspace Office Plane dry-run behavior.
+
+Good fixture:
+
+```text
+conformance/good/agent-machine-office-dry-run.json
+```
+
+Bad fixtures:
+
+```text
+conformance/bad/agent-machine-whole-home-mount.json
+conformance/bad/agent-machine-unscoped-downloads.json
+conformance/bad/office-raw-apple-app-db.json
+```
+
+The semantic validator rejects:
+
+- `$HOME` / `~` as a whole-home Agent Machine mount root;
+- unscoped `~/Downloads` browser download mounts;
+- raw Apple app database/library access for Notes, Photos, Reminders, or Voice Memos;
+- Agent Machine lanes that do not emit `agent-machine.mount.evidence`;
+- Office Plane lanes that do not emit `office.artifact.evidence`.
+
+These checks preserve the intended boundary:
+
+```text
+sourceosctl agent-machine mounts plan -> scoped mount evidence
+sourceosctl office ...                -> OfficeArtifact-compatible dry-run/evidence
+agent-term office ...                 -> governance-preserving operator event
+AgentPlane                            -> AgentMachineMountEvidence / OfficeArtifactEvidence
+```
+
 ## IPC v0 reference harness
 
 This repo now includes a small IPC v0 reference harness under:
@@ -68,6 +103,8 @@ The production runner/orchestrator remains out of scope for this repo. The refer
 - Implementing the production runner/orchestrator (execution belongs elsewhere)
 - Hosting container images (this repo only **pins** digests once published)
 - Being a monorepo for all workstation tooling (we stay small and auditable)
+- Executing Agent Machine mounts or Office generation/conversion directly
+- Mounting raw host app databases such as Apple Notes, Photos, Reminders, or Voice Memos
 
 ## How this plugs into the platform
 

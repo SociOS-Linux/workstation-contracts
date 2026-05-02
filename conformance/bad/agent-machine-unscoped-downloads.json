@@ -1,0 +1,35 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "agent-machine-unscoped-downloads",
+    "name": "Invalid Agent Machine unscoped downloads mount",
+    "description": "This fixture must fail because browser downloads must use ~/Downloads/SourceOS/agent-downloads, not the whole host Downloads directory.",
+    "labels": {
+      "sourceos.agent_machine": "true"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "invalid-unscoped-downloads",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "bad-downloads-mount",
+            "run": "sourceosctl agent-machine mounts plan --dev-root ~/dev --docs-root ~/Documents/SourceOS/agent-output --downloads-root ~/Downloads"
+          }
+        ],
+        "evidence": {
+          "emit": ["agent-machine.mount.plan"]
+        }
+      }
+    ]
+  }
+}
