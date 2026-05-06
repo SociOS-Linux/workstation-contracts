@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/provisional-artifact-id.schema.json",
+  "title": "ProvisionalArtifactId",
+  "description": "Contract for cross-device resume and provisional artifact ID mapping. When a device creates an artifact before it has a canonical, server-assigned ID (e.g. during offline operation), it issues a ProvisionalArtifactId. Once connectivity is restored, the provisional ID is resolved to a canonical ID and all references are migrated. This enables local-first operation without loss of traceability.",
+  "type": "object",
+  "required": ["provisionalId", "deviceId", "createdAt", "resolutionState"],
+  "additionalProperties": false,
+  "properties": {
+    "provisionalId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Locally-generated provisional artifact identifier (ULID or UUID)."
+    },
+    "canonicalId": {
+      "type": "string",
+      "description": "Server-assigned canonical artifact ID. Present only when resolutionState=resolved."
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Device that created the provisional ID."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/provisional-artifact-id/v1"
+    },
+    "operationId": {
+      "type": "string",
+      "description": "WorkspaceOperation this artifact belongs to."
+    },
+    "artifactKind": {
+      "type": "string",
+      "description": "Kind of artifact this ID refers to (e.g. terminal-session, web-capture, agent-execution-output)."
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the provisional ID was issued."
+    },
+    "resolvedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the provisional ID was resolved to a canonical ID."
+    },
+    "resolutionState": {
+      "type": "string",
+      "enum": ["provisional", "resolved", "conflict", "abandoned"],
+      "description": "Current resolution state. 'conflict' means two devices issued provisional IDs for the same artifact and the conflict must be resolved. 'abandoned' means the artifact was discarded without resolution."
+    },
+    "conflictDetails": {
+      "type": "object",
+      "description": "Present when resolutionState=conflict.",
+      "additionalProperties": false,
+      "properties": {
+        "conflictingProvisionalId": {"type": "string"},
+        "conflictingDeviceId": {"type": "string"},
+        "detectedAt": {"type": "string", "format": "date-time"},
+        "resolutionDecisionCardId": {"type": "string"}
+      }
+    },
+    "resumeContext": {
+      "type": "object",
+      "description": "Cross-device resume context. Allows a different device to continue an operation started with this provisional artifact.",
+      "additionalProperties": false,
+      "properties": {
+        "resumableBy": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Device IDs permitted to resume this operation."
+        },
+        "resumeToken": {
+          "type": "string",
+          "description": "Opaque resume token for the originating operation."
+        },
+        "lastCheckpoint": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

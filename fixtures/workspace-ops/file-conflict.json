@@ -1,0 +1,21 @@
+{
+  "_comment": "Fixture: FileAvailabilityState for a conflicted file. The conflict requires an explicit resolution decision (DecisionCard). Silent resolution is not permitted for conflicted or quarantined states.",
+  "id": "01HXYZ9ABC006FILEAVAIL",
+  "fileRef": "projects/myproject/data/results.csv",
+  "state": "conflicted",
+  "deviceId": "urn:sourceos:device:abc123def456",
+  "observedAt": "2026-05-06T13:00:00Z",
+  "operationId": "01HXYZ9ABCOP004",
+  "localPath": "/home/user/dev/myproject/data/results.csv",
+  "remoteRef": "sourceos-sync://workspace-001/projects/myproject/data/results.csv",
+  "conflictDetails": {
+    "localChecksum": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "remoteChecksum": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "localModifiedAt": "2026-05-06T12:55:00Z",
+    "remoteModifiedAt": "2026-05-06T12:58:00Z",
+    "conflictingDeviceId": "urn:sourceos:device:def789ghi012",
+    "resolutionStrategy": "manual",
+    "resolutionDecisionCardId": null
+  },
+  "provisionalId": "01HXYZ9ABC007PROVID"
+}

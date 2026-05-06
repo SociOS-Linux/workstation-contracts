@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/diagnostic-redaction.schema.json",
+  "title": "DiagnosticRedaction",
+  "description": "Contract for local diagnostic redaction. Before any diagnostic artifact (log, transcript, capture, agent output) crosses the device boundary or is stored in shared operation state, it must pass a redaction contract. The redaction contract records which rules were applied, what categories of sensitive data were targeted, and whether the result was verified.",
+  "type": "object",
+  "required": ["id", "deviceId", "operationId", "originalRef", "redactedRef", "rules", "appliedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique redaction record identifier (ULID or UUID)."
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/diagnostic-redaction/v1"
+    },
+    "originalRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Content-addressable reference to the unredacted artifact. Must remain local to the device and must not be exported."
+    },
+    "redactedRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Content-addressable reference to the redacted artifact safe for export."
+    },
+    "artifactKind": {
+      "type": "string",
+      "enum": ["log", "terminal-transcript", "browser-capture", "agent-output", "diagnostic"],
+      "description": "The kind of artifact being redacted."
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered list of redaction rules applied.",
+      "items": {
+        "type": "object",
+        "required": ["ruleId", "category", "action"],
+        "additionalProperties": false,
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stable rule identifier (e.g. sourceos.redact.token, sourceos.redact.pii-email)."
+          },
+          "category": {
+            "type": "string",
+            "enum": ["token", "credential", "pii-email", "pii-phone", "pii-name", "pii-address", "hostname", "ip-address", "custom"],
+            "description": "Category of sensitive data targeted by this rule."
+          },
+          "action": {
+            "type": "string",
+            "enum": ["replace-placeholder", "hash", "remove", "truncate"],
+            "description": "Redaction action applied."
+          },
+          "matchCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of matches found and redacted."
+          }
+        }
+      }
+    },
+    "appliedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "redactedBy": {
+      "type": "string",
+      "description": "Component that applied redaction (e.g. sourceos-redact, agent-machine-redact)."
+    },
+    "verified": {
+      "type": "boolean",
+      "description": "Whether the redacted artifact was verified by a secondary scan for remaining sensitive patterns."
+    },
+    "verificationRef": {
+      "type": "string",
+      "description": "Reference to the verification scan result."
+    }
+  }
+}

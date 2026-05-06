@@ -33,7 +33,27 @@ FORBIDDEN_RUN_PATTERNS = [
 REQUIRED_EVIDENCE_BY_LABEL = {
     "sourceos.agent_machine": "agent-machine.mount.evidence",
     "sourceos.office_plane": "office.artifact.evidence",
+    # Workspace operations labels
+    "sourceos.terminal_command": "terminal.command.evidence",
+    "sourceos.browser_session": "browser.capture.evidence",
+    "sourceos.local_agent_execution": "agent.execution.evidence",
+    "sourceos.file_conflict": "file.conflict.evidence",
 }
+
+WORKSPACE_OPS_FORBIDDEN_PATTERNS = [
+    (
+        re.compile(r"workspace-ops\s+terminal-command\s+run[^\n]*--no-audit"),
+        "Terminal command must not use --no-audit; audit-disabled sessions cannot participate in workspace operation evidence chains.",
+    ),
+    (
+        re.compile(r"workspace-ops\s+web-capture\s+take[^\n]*--capture-scope\s+none"),
+        "Browser web-capture step must not use --capture-scope none; use an explicit-urls or allowed-origins scope.",
+    ),
+    (
+        re.compile(r"workspace-ops\s+local-agent-execution\s+run[^\n]*--no-policy-gate"),
+        "Local agent execution must not use --no-policy-gate; all LocalAgentExecution operations require a prior PolicyGateRecord.",
+    ),
+]
 
 def load_json(p: Path):
     return json.loads(p.read_text(encoding="utf-8"))
@@ -96,6 +116,14 @@ def main():
                         f"FAIL semantic: {p}: step '{step.get('name', '<unnamed>')}' in lane '{lane['name']}': {message}",
                         file=sys.stderr,
                     )
+            if labels.get("sourceos.workspace_ops") == "true":
+                for pattern, message in WORKSPACE_OPS_FORBIDDEN_PATTERNS:
+                    if pattern.search(run):
+                        ok = False
+                        print(
+                            f"FAIL semantic: {p}: step '{step.get('name', '<unnamed>')}' in lane '{lane['name']}': {message}",
+                            file=sys.stderr,
+                        )
 
     if ok:
         print("OK: all contracts valid")

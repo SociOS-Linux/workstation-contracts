@@ -1,0 +1,32 @@
+{
+  "_comment": "Fixture: Valid LocalAgentExecution with a required policyGateId and declared filesystem-only side effects. The agent.execution.evidence artifact is referenced via evidenceRef.",
+  "id": "01HXYZ9ABC005AGENTEXEC",
+  "operationId": "01HXYZ9ABCOP003",
+  "deviceId": "urn:sourceos:device:abc123def456",
+  "taskId": "01HXYZ9ABCTASK002",
+  "schemaVersion": "workspace-ops/local-agent-execution/v1",
+  "agentId": "agent-machine",
+  "model": "llama3:8b",
+  "promptRef": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "contextRefs": [
+    "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  ],
+  "startedAt": "2026-05-06T12:00:00Z",
+  "endedAt": "2026-05-06T12:00:45Z",
+  "status": "completed",
+  "outputRef": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "sideEffects": {
+    "classification": "filesystem",
+    "filesWritten": [
+      "/home/user/Documents/SourceOS/agent-output/01HXYZ9ABCOP003/summary.md"
+    ],
+    "networkTargets": []
+  },
+  "policyGateId": "01HXYZ9ABCPG003",
+  "evidenceRef": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "tokenUsage": {
+    "promptTokens": 512,
+    "completionTokens": 256,
+    "totalTokens": 768
+  }
+}

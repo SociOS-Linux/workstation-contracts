@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/capability-profile.schema.json",
+  "title": "CapabilityProfile",
+  "description": "Declares the active capability surface of a local SourceOS workstation. Covers terminal, browser, filesystem, sandbox, local model, and network capabilities. Capability profiles are evaluated by policy gates before local surfaces can participate in Workspace Operations.",
+  "type": "object",
+  "required": ["deviceId", "schemaVersion", "capabilities"],
+  "additionalProperties": false,
+  "properties": {
+    "deviceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/capability-profile/v1"
+    },
+    "capturedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["terminal", "browser", "filesystem", "sandbox", "localModel", "network"],
+      "additionalProperties": false,
+      "properties": {
+        "terminal": {
+          "type": "object",
+          "description": "Local terminal emulator capability (e.g. TurtleTerm).",
+          "required": ["available"],
+          "additionalProperties": false,
+          "properties": {
+            "available": {"type": "boolean"},
+            "implementation": {"type": "string", "description": "e.g. turtlterm, xterm, gnome-terminal"},
+            "version": {"type": "string"},
+            "allowedShells": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "auditEnabled": {
+              "type": "boolean",
+              "description": "Whether terminal session transcript audit is enabled."
+            },
+            "restrictions": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "allowNetworkCommands": {"type": "boolean"},
+                "allowRootExecution": {"type": "boolean"},
+                "maxSessionDurationSecs": {"type": "integer", "minimum": 0}
+              }
+            }
+          }
+        },
+        "browser": {
+          "type": "object",
+          "description": "Local browser capability (e.g. BearBrowser).",
+          "required": ["available"],
+          "additionalProperties": false,
+          "properties": {
+            "available": {"type": "boolean"},
+            "implementation": {"type": "string", "description": "e.g. bearbrowser, firefox, chromium"},
+            "version": {"type": "string"},
+            "captureEnabled": {
+              "type": "boolean",
+              "description": "Whether WebCapture (screenshot/DOM snapshot) is enabled."
+            },
+            "restrictions": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "allowedOrigins": {
+                  "type": "array",
+                  "items": {"type": "string"},
+                  "description": "Allowlisted URL origins for capture. Empty means all origins are allowed by policy."
+                },
+                "blockPrivateNetworkCapture": {"type": "boolean"},
+                "requireCaptureEvidence": {"type": "boolean"}
+              }
+            }
+          }
+        },
+        "filesystem": {
+          "type": "object",
+          "description": "Local filesystem access capability.",
+          "required": ["available"],
+          "additionalProperties": false,
+          "properties": {
+            "available": {"type": "boolean"},
+            "allowedRoots": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Allowlisted filesystem roots. Whole-home (~) mounts are not permitted."
+            },
+            "syncProvider": {
+              "type": "string",
+              "description": "e.g. sourceos-sync, rclone, none"
+            },
+            "conflictResolutionStrategy": {
+              "type": "string",
+              "enum": ["last-write-wins", "manual", "sourceos-merge", "quarantine"],
+              "description": "Default strategy for conflicted file states."
+            }
+          }
+        },
+        "sandbox": {
+          "type": "object",
+          "description": "Local sandbox/container execution capability.",
+          "required": ["available"],
+          "additionalProperties": false,
+          "properties": {
+            "available": {"type": "boolean"},
+            "runtime": {
+              "type": "string",
+              "enum": ["podman", "nspawn", "nix-sandbox", "bubblewrap", "none"]
+            },
+            "rootlessCapable": {"type": "boolean"},
+            "snapshotCapable": {"type": "boolean"}
+          }
+        },
+        "localModel": {
+          "type": "object",
+          "description": "Local AI/ML model execution capability (e.g. llama.cpp, ollama).",
+          "required": ["available"],
+          "additionalProperties": false,
+          "properties": {
+            "available": {"type": "boolean"},
+            "runtime": {
+              "type": "string",
+              "description": "e.g. llama.cpp, ollama, none"
+            },
+            "models": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Available local model identifiers."
+            },
+            "restrictions": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requirePolicyGateBeforeExecution": {"type": "boolean"},
+                "maxContextTokens": {"type": "integer", "minimum": 0},
+                "allowNetworkModelFetch": {"type": "boolean"}
+              }
+            }
+          }
+        },
+        "network": {
+          "type": "object",
+          "description": "Local network state.",
+          "required": ["available"],
+          "additionalProperties": false,
+          "properties": {
+            "available": {"type": "boolean"},
+            "online": {"type": "boolean"},
+            "vpnActive": {"type": "boolean"},
+            "meshNode": {
+              "type": "boolean",
+              "description": "Whether the device participates in the SourceOS mesh network."
+            },
+            "restrictions": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "allowExternalDownloads": {"type": "boolean"},
+                "allowExternalUploads": {"type": "boolean"},
+                "requireVpnForRemoteOperations": {"type": "boolean"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

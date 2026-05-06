@@ -1,0 +1,54 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "browser-capture-ok",
+    "name": "Browser capture workspace operation (valid)",
+    "description": "Conformance fixture: a scoped browser capture operation using explicit-urls capture mode. No whole-history capture. Emits browser.capture.evidence. BearBrowser integration target.",
+    "labels": {
+      "sourceos.capability": "browser",
+      "sourceos.workspace_ops": "true",
+      "sourceos.browser_session": "true",
+      "sourceos.integration_target": "BearBrowser"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "browser-capture-operation",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "emit-policy-gate",
+            "run": "sourceosctl workspace-ops policy-gate record --operation-id op-002 --policy sourceos.browser.capture.admission --result allow"
+          },
+          {
+            "name": "open-browser-session",
+            "run": "sourceosctl workspace-ops browser-session open --operation-id op-002 --capture-scope explicit-urls --urls 'https://docs.sourceos.io/workspace-ops'"
+          },
+          {
+            "name": "capture-page",
+            "run": "sourceosctl workspace-ops web-capture take --session-id sess-002 --url 'https://docs.sourceos.io/workspace-ops' --format screenshot-png"
+          },
+          {
+            "name": "emit-browser-capture-evidence",
+            "run": "sourceosctl workspace-ops evidence emit --operation-id op-002 --kind browser.capture.evidence --session-id sess-002"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "workspace-ops.policy-gate.record",
+            "browser.capture.evidence",
+            "workspace-ops.operation.event"
+          ]
+        }
+      }
+    ]
+  }
+}

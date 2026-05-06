@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/web-capture.schema.json",
+  "title": "WebCapture",
+  "description": "Artifact contract for a web capture produced by a local browser session (e.g. BearBrowser). A WebCapture records what was captured, from where, and in what format. Content must be stored by content-addressed reference. PII-sensitive captures must be flagged for redaction before leaving the device boundary.",
+  "type": "object",
+  "required": ["id", "sessionId", "operationId", "url", "ts", "format"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique capture identifier (ULID or UUID)."
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "BrowserSession this capture belongs to."
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/web-capture/v1"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL that was captured. Must match the captureScope declared on the BrowserSession."
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the capture was taken."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["screenshot-png", "screenshot-jpeg", "dom-snapshot-html", "pdf", "mhtml", "text"],
+      "description": "Capture format."
+    },
+    "contentRef": {
+      "type": "string",
+      "description": "Content-addressable reference (e.g. sha256:<hex>) to the raw capture data."
+    },
+    "sizeBytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "redacted": {
+      "type": "boolean",
+      "description": "Whether a DiagnosticRedaction pass has been applied before export."
+    },
+    "redactionRef": {
+      "type": "string",
+      "description": "Reference to the DiagnosticRedaction record applied to this capture."
+    },
+    "piiFlags": {
+      "type": "array",
+      "description": "PII categories detected in this capture (e.g. ['email', 'phone-number']).",
+      "items": {"type": "string"}
+    },
+    "title": {
+      "type": "string",
+      "description": "Page title at capture time."
+    }
+  }
+}

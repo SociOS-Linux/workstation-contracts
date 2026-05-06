@@ -1,0 +1,38 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "terminal-no-audit",
+    "name": "Invalid terminal command bypassing audit",
+    "description": "This fixture must fail because the terminal command uses --no-audit, which disables session transcript audit. Terminal sessions with audit disabled cannot participate in workspace operation evidence chains.",
+    "labels": {
+      "sourceos.workspace_ops": "true",
+      "sourceos.terminal_command": "true"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "invalid-terminal-no-audit",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "bad-terminal-no-audit",
+            "run": "sourceosctl workspace-ops terminal-command run --operation-id op-bad-001 --session-id sess-bad-001 --command bash --no-audit --side-effects none"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "workspace-ops.operation.event"
+          ]
+        }
+      }
+    ]
+  }
+}

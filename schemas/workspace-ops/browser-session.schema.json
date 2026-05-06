@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/browser-session.schema.json",
+  "title": "BrowserSession",
+  "description": "Operation contract for a local browser session (e.g. BearBrowser). A BrowserSession groups WebCapture artifacts and tracks the scoped navigation context for a WorkspaceOperation. Browser sessions must not produce hidden workspace side effects: all captures, downloads, and network activity that affect operation state must be declared.",
+  "type": "object",
+  "required": ["id", "operationId", "deviceId", "startedAt", "captureScope"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique session identifier (ULID or UUID)."
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/browser-session/v1"
+    },
+    "implementation": {
+      "type": "string",
+      "description": "Browser implementation (e.g. bearbrowser, firefox, chromium)."
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "captureScope": {
+      "type": "object",
+      "description": "Declared scope of what this session is permitted to capture. Unscoped whole-history capture is not permitted.",
+      "required": ["mode"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["explicit-urls", "allowed-origins", "search-result", "none"],
+          "description": "Capture mode. 'none' means no capture occurs. 'explicit-urls' requires a non-empty urls list."
+        },
+        "urls": {
+          "type": "array",
+          "items": {"type": "string", "format": "uri"},
+          "description": "Explicit URLs scoped for capture (required when mode=explicit-urls)."
+        },
+        "allowedOrigins": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Allowed origin patterns for capture (used when mode=allowed-origins)."
+        }
+      }
+    },
+    "captureIds": {
+      "type": "array",
+      "description": "WebCapture artifact IDs produced in this session.",
+      "items": {"type": "string"}
+    },
+    "downloadIds": {
+      "type": "array",
+      "description": "TransferOperation IDs for downloads initiated in this session.",
+      "items": {"type": "string"}
+    },
+    "policyGateId": {
+      "type": "string",
+      "description": "PolicyGateRecord that admitted this session."
+    },
+    "evidenceRef": {
+      "type": "string",
+      "description": "Reference to the browser.capture.evidence artifact for this session."
+    }
+  }
+}

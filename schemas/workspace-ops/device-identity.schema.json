@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/device-identity.schema.json",
+  "title": "DeviceIdentity and DeviceTrustProfile",
+  "description": "Contracts for local device identity attestation and trust profile binding. DeviceIdentity establishes a stable, hardware-anchored device identifier. DeviceTrustProfile records the current trust level, active policies, and attestation validity window.",
+  "$defs": {
+    "DeviceIdentity": {
+      "type": "object",
+      "title": "DeviceIdentity",
+      "description": "Stable, hardware-anchored identity for a local SourceOS workstation.",
+      "required": ["deviceId", "hostname", "platform", "publicKeyFingerprint", "createdAt"],
+      "additionalProperties": false,
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Globally unique device identifier (e.g. urn:sourceos:device:<fingerprint>)."
+        },
+        "hostname": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["linux-amd64", "linux-arm64", "asahi-linux", "generic-linux"],
+          "description": "Linux-first platform tag. macOS surfaces are not first-class identity anchors."
+        },
+        "publicKeyFingerprint": {
+          "type": "string",
+          "minLength": 16,
+          "description": "SHA-256 fingerprint of the device's public key (hex or base64url)."
+        },
+        "keyAlgorithm": {
+          "type": "string",
+          "enum": ["ed25519", "ecdsa-p256", "rsa-4096"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "genesisRef": {
+          "type": "string",
+          "description": "Reference to the genesis identity packet (if enrolled in SourceOS identity mesh)."
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "DeviceTrustProfile": {
+      "type": "object",
+      "title": "DeviceTrustProfile",
+      "description": "Current trust level and active policy set for a local device.",
+      "required": ["deviceId", "trustLevel", "attestedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trustLevel": {
+          "type": "string",
+          "enum": ["untrusted", "provisional", "trusted", "trusted-with-tpm", "revoked"],
+          "description": "Device trust level. Local-first does not mean policy-free: untrusted and provisional devices operate under restricted capability sets."
+        },
+        "attestedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "attestedBy": {
+          "type": "string",
+          "description": "Identity or service that issued this trust attestation."
+        },
+        "policies": {
+          "type": "array",
+          "description": "Active policy identifiers that govern this device's operation scope.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "restrictions": {
+          "type": "object",
+          "description": "Capability restrictions imposed on this device at the current trust level.",
+          "additionalProperties": false,
+          "properties": {
+            "allowNetworkOperations": {"type": "boolean"},
+            "allowLocalAgentExecution": {"type": "boolean"},
+            "allowBrowserCapture": {"type": "boolean"},
+            "allowFileUpload": {"type": "boolean"},
+            "maxFileSizeBytes": {"type": "integer", "minimum": 0},
+            "requirePolicyGateForAgentExecution": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {"$ref": "#/$defs/DeviceIdentity"},
+    {"$ref": "#/$defs/DeviceTrustProfile"}
+  ]
+}
