@@ -1,0 +1,42 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "browser-unscoped-capture",
+    "name": "Invalid browser capture without scope declaration",
+    "description": "This fixture must fail because the browser capture uses --capture-scope none while still attempting to capture. Capture mode 'none' means no capture is permitted; any capture step is a conformance violation.",
+    "labels": {
+      "sourceos.workspace_ops": "true",
+      "sourceos.browser_session": "true"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "invalid-browser-unscoped-capture",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "open-browser-session-no-scope",
+            "run": "sourceosctl workspace-ops browser-session open --operation-id op-bad-002 --capture-scope none"
+          },
+          {
+            "name": "bad-capture-without-scope",
+            "run": "sourceosctl workspace-ops web-capture take --session-id sess-bad-002 --url 'https://example.com' --format screenshot-png --capture-scope none"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "workspace-ops.operation.event"
+          ]
+        }
+      }
+    ]
+  }
+}

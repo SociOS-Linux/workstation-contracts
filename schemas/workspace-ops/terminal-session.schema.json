@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/terminal-session.schema.json",
+  "title": "TerminalSession",
+  "description": "Artifact contract for a terminal session (e.g. TurtleTerm). Records the session envelope, device binding, and transcript reference. The transcript itself must be stored as a separate artifact and referenced by contentRef. TerminalSession artifacts map to WorkspaceOperation kind=terminal-command.",
+  "type": "object",
+  "required": ["id", "operationId", "deviceId", "shell", "startedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique session identifier (ULID or UUID)."
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "WorkspaceOperation this session belongs to."
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/terminal-session/v1"
+    },
+    "implementation": {
+      "type": "string",
+      "description": "Terminal emulator implementation (e.g. turtlterm, xterm)."
+    },
+    "shell": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Shell process path (e.g. /bin/bash, /usr/bin/fish)."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Working directory at session start. Must be within an allowed filesystem root."
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "Shell exit code at session end."
+    },
+    "transcriptRef": {
+      "type": "string",
+      "description": "Content-addressable reference (e.g. sha256:<hex>) to the session transcript artifact."
+    },
+    "commandIds": {
+      "type": "array",
+      "description": "Ordered list of TerminalCommand IDs executed within this session.",
+      "items": {"type": "string"}
+    },
+    "auditEnabled": {
+      "type": "boolean",
+      "description": "Whether session transcript audit was active. Sessions with auditEnabled=false must not be used as operation evidence."
+    },
+    "redacted": {
+      "type": "boolean",
+      "description": "Whether a DiagnosticRedaction pass has been applied to the transcript."
+    },
+    "policyGateId": {
+      "type": "string",
+      "description": "PolicyGateRecord that admitted this session."
+    }
+  }
+}

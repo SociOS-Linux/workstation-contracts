@@ -1,0 +1,49 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "file-conflict-ok",
+    "name": "File conflict handling workspace operation (valid)",
+    "description": "Conformance fixture: a file conflict detected during sync, requiring an explicit resolution decision (DecisionCard). Silent resolution is not permitted. Emits file.conflict.evidence.",
+    "labels": {
+      "sourceos.capability": "filesystem",
+      "sourceos.workspace_ops": "true",
+      "sourceos.file_conflict": "true"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "file-conflict-operation",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "detect-file-conflict",
+            "run": "sourceosctl workspace-ops file-availability check --operation-id op-004 --file-ref projects/myproject/data/results.csv"
+          },
+          {
+            "name": "record-conflict-decision-card",
+            "run": "sourceosctl workspace-ops decision-card record --operation-id op-004 --question 'Resolve conflict in results.csv' --answer 'keep-local' --decided-by user:alice --rationale 'Local version is more recent and manually verified'"
+          },
+          {
+            "name": "emit-file-conflict-evidence",
+            "run": "sourceosctl workspace-ops evidence emit --operation-id op-004 --kind file.conflict.evidence --file-ref projects/myproject/data/results.csv"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "workspace-ops.decision-card",
+            "file.conflict.evidence",
+            "workspace-ops.operation.event"
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "01HXYZ9ABC001TERMCMD",
+  "sessionId": "01HXYZ9ABC000TERMSESS",
+  "operationId": "01HXYZ9ABCOP001",
+  "taskId": "01HXYZ9ABCTASK001",
+  "schemaVersion": "workspace-ops/terminal-command/v1",
+  "command": "pixi",
+  "args": ["run", "--manifest-path", "pixi.toml", "lint"],
+  "env": {},
+  "cwd": "/home/user/dev/myproject",
+  "startedAt": "2026-05-06T10:00:00Z",
+  "endedAt": "2026-05-06T10:00:12Z",
+  "exitCode": 0,
+  "outputRef": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "sideEffects": {
+    "classification": "filesystem",
+    "filesWritten": ["/home/user/dev/myproject/.pixi/envs/default"],
+    "networkTargets": [],
+    "subprocesses": ["ruff", "mypy"]
+  },
+  "policyGateId": "01HXYZ9ABCPG001",
+  "evidenceRef": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

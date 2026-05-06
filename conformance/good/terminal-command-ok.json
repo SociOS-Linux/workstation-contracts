@@ -1,0 +1,50 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "terminal-command-ok",
+    "name": "Terminal command workspace operation (valid)",
+    "description": "Conformance fixture: a terminal command operation that declares all side effects, emits terminal.command.evidence, and participates in the operation lifecycle. TurtleTerm integration target.",
+    "labels": {
+      "sourceos.capability": "terminal",
+      "sourceos.workspace_ops": "true",
+      "sourceos.terminal_command": "true",
+      "sourceos.integration_target": "TurtleTerm"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "terminal-command-operation",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "emit-policy-gate",
+            "run": "sourceosctl workspace-ops policy-gate record --operation-id op-001 --policy sourceos.terminal.admission --result allow"
+          },
+          {
+            "name": "run-terminal-command",
+            "run": "sourceosctl workspace-ops terminal-command run --operation-id op-001 --session-id sess-001 --command pixi --args 'run lint' --cwd ~/dev/myproject --side-effects filesystem"
+          },
+          {
+            "name": "emit-terminal-command-evidence",
+            "run": "sourceosctl workspace-ops evidence emit --operation-id op-001 --kind terminal.command.evidence --command-id cmd-001"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "workspace-ops.policy-gate.record",
+            "terminal.command.evidence",
+            "workspace-ops.operation.event"
+          ]
+        }
+      }
+    ]
+  }
+}
