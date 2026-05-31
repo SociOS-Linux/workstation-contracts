@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/workspace-operation.schema.json",
+  "title": "Workspace Operation Core Types",
+  "description": "Core contract types for the Workspace Operation Plane: WorkspaceOperation, OperationTask, OperationEvent, Artifact, DecisionCard, PolicyGateRecord.",
+  "$defs": {
+    "OperationStatus": {
+      "type": "string",
+      "enum": ["pending", "admitted", "running", "paused", "completed", "failed", "cancelled", "gated"]
+    },
+    "TaskStatus": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "skipped"]
+    },
+    "ArtifactKind": {
+      "type": "string",
+      "enum": [
+        "terminal-session",
+        "terminal-command-output",
+        "browser-session",
+        "web-capture",
+        "download",
+        "upload",
+        "agent-execution-output",
+        "log",
+        "diagnostic",
+        "redacted-diagnostic",
+        "file-snapshot"
+      ]
+    },
+    "FileAvailabilityState": {
+      "type": "string",
+      "enum": ["local", "remote", "syncing", "conflicted", "quarantined"]
+    },
+    "PolicyGateResult": {
+      "type": "string",
+      "enum": ["allow", "deny", "escalate", "redact"]
+    },
+    "OperationTask": {
+      "type": "object",
+      "title": "OperationTask",
+      "description": "A discrete unit of work within a WorkspaceOperation.",
+      "required": ["id", "operationId", "name", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "operationId": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "status": {"$ref": "#/$defs/TaskStatus"},
+        "assignedTo": {"type": "string"},
+        "startedAt": {"type": "string", "format": "date-time"},
+        "endedAt": {"type": "string", "format": "date-time"},
+        "artifactIds": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "meta": {"type": "object", "additionalProperties": true}
+      }
+    },
+    "OperationEvent": {
+      "type": "object",
+      "title": "OperationEvent",
+      "description": "A timestamped event emitted during a WorkspaceOperation lifecycle.",
+      "required": ["id", "operationId", "type", "ts"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "operationId": {"type": "string", "minLength": 1},
+        "type": {"type": "string", "minLength": 1},
+        "ts": {"type": "string", "format": "date-time"},
+        "taskId": {"type": "string"},
+        "actorId": {"type": "string"},
+        "payload": {"type": "object", "additionalProperties": true}
+      }
+    },
+    "Artifact": {
+      "type": "object",
+      "title": "Artifact",
+      "description": "An artifact produced or consumed by a WorkspaceOperation task.",
+      "required": ["id", "operationId", "kind", "availability"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "operationId": {"type": "string", "minLength": 1},
+        "taskId": {"type": "string"},
+        "kind": {"$ref": "#/$defs/ArtifactKind"},
+        "availability": {"$ref": "#/$defs/FileAvailabilityState"},
+        "contentRef": {"type": "string"},
+        "provisionalId": {"type": "string"},
+        "redacted": {"type": "boolean", "default": false},
+        "redactionRef": {"type": "string"},
+        "checksum": {"type": "string"},
+        "sizeBytes": {"type": "integer", "minimum": 0},
+        "createdAt": {"type": "string", "format": "date-time"},
+        "meta": {"type": "object", "additionalProperties": true}
+      }
+    },
+    "DecisionCard": {
+      "type": "object",
+      "title": "DecisionCard",
+      "description": "A recorded human or policy decision made during a WorkspaceOperation.",
+      "required": ["id", "operationId", "question", "answer", "decidedBy", "ts"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "operationId": {"type": "string", "minLength": 1},
+        "taskId": {"type": "string"},
+        "question": {"type": "string", "minLength": 1},
+        "answer": {"type": "string", "minLength": 1},
+        "decidedBy": {"type": "string", "minLength": 1},
+        "ts": {"type": "string", "format": "date-time"},
+        "rationale": {"type": "string"},
+        "expiresAt": {"type": "string", "format": "date-time"}
+      }
+    },
+    "PolicyGateRecord": {
+      "type": "object",
+      "title": "PolicyGateRecord",
+      "description": "An admission, audit, or redaction policy evaluation record for a WorkspaceOperation.",
+      "required": ["id", "operationId", "policy", "result", "ts"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "operationId": {"type": "string", "minLength": 1},
+        "taskId": {"type": "string"},
+        "policy": {"type": "string", "minLength": 1},
+        "result": {"$ref": "#/$defs/PolicyGateResult"},
+        "ts": {"type": "string", "format": "date-time"},
+        "evaluatedBy": {"type": "string"},
+        "reason": {"type": "string"},
+        "decisionCardId": {"type": "string"}
+      }
+    },
+    "WorkspaceOperation": {
+      "type": "object",
+      "title": "WorkspaceOperation",
+      "description": "A local workspace operation with full lifecycle, task, event, artifact, and policy gate records.",
+      "required": ["id", "kind", "status", "deviceId", "createdAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "kind": {
+          "type": "string",
+          "enum": [
+            "terminal-command",
+            "browser-session",
+            "web-capture",
+            "download",
+            "upload",
+            "local-agent-execution",
+            "file-sync",
+            "diagnostic-collection"
+          ]
+        },
+        "status": {"$ref": "#/$defs/OperationStatus"},
+        "deviceId": {"type": "string", "minLength": 1},
+        "createdAt": {"type": "string", "format": "date-time"},
+        "updatedAt": {"type": "string", "format": "date-time"},
+        "closedAt": {"type": "string", "format": "date-time"},
+        "initiatedBy": {"type": "string"},
+        "tasks": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/OperationTask"}
+        },
+        "events": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/OperationEvent"}
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/Artifact"}
+        },
+        "decisionCards": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DecisionCard"}
+        },
+        "policyGates": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/PolicyGateRecord"}
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {"$ref": "#/$defs/WorkspaceOperation"},
+    {"$ref": "#/$defs/OperationTask"},
+    {"$ref": "#/$defs/OperationEvent"},
+    {"$ref": "#/$defs/Artifact"},
+    {"$ref": "#/$defs/DecisionCard"},
+    {"$ref": "#/$defs/PolicyGateRecord"}
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/transfer-operation.schema.json",
+  "title": "TransferOperation",
+  "description": "Operation contract for file Download and Upload operations initiated from a local surface. Downloads must use scoped destination paths. Uploads must have an explicit operationId and must not bypass audit. Both directions require evidence emission.",
+  "type": "object",
+  "required": ["id", "operationId", "deviceId", "direction", "source", "destination", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique transfer identifier (ULID or UUID)."
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/transfer-operation/v1"
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["download", "upload"],
+      "description": "Transfer direction from the local device's perspective."
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "For downloads: the remote URL or URI. For uploads: the local file path (must be within an allowed filesystem root)."
+    },
+    "destination": {
+      "type": "string",
+      "minLength": 1,
+      "description": "For downloads: the local destination path (must be scoped, e.g. ~/Downloads/SourceOS/agent-downloads/<operationId>/). For uploads: the remote URL or URI."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "cancelled", "quarantined"]
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "bytesTotal": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "bytesDone": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "checksum": {
+      "type": "string",
+      "description": "SHA-256 checksum of the transferred content (hex). Required when status=completed."
+    },
+    "mimeType": {
+      "type": "string"
+    },
+    "policyGateId": {
+      "type": "string",
+      "description": "PolicyGateRecord that admitted this transfer."
+    },
+    "evidenceRef": {
+      "type": "string",
+      "description": "Reference to the transfer.evidence artifact."
+    },
+    "fileAvailabilityState": {
+      "type": "string",
+      "enum": ["local", "remote", "syncing", "conflicted", "quarantined"],
+      "description": "File availability state of the destination after transfer completes."
+    }
+  }
+}

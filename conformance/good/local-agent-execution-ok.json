@@ -1,0 +1,50 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "local-agent-execution-ok",
+    "name": "Local agent execution workspace operation (valid)",
+    "description": "Conformance fixture: a local agent execution with mandatory policy gate, declared filesystem side effects, and agent.execution.evidence emission. agent-machine integration target.",
+    "labels": {
+      "sourceos.capability": "local-agent",
+      "sourceos.workspace_ops": "true",
+      "sourceos.local_agent_execution": "true",
+      "sourceos.integration_target": "agent-machine"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "local-agent-execution-operation",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "emit-policy-gate",
+            "run": "sourceosctl workspace-ops policy-gate record --operation-id op-003 --policy sourceos.agent.execution.admission --result allow"
+          },
+          {
+            "name": "run-local-agent",
+            "run": "sourceosctl workspace-ops local-agent-execution run --operation-id op-003 --agent agent-machine --model llama3:8b --prompt-ref sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd --side-effects filesystem --output-root ~/Documents/SourceOS/agent-output"
+          },
+          {
+            "name": "emit-agent-execution-evidence",
+            "run": "sourceosctl workspace-ops evidence emit --operation-id op-003 --kind agent.execution.evidence --execution-id exec-001"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "workspace-ops.policy-gate.record",
+            "agent.execution.evidence",
+            "workspace-ops.operation.event"
+          ]
+        }
+      }
+    ]
+  }
+}

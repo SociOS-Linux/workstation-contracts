@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/terminal-command.schema.json",
+  "title": "TerminalCommand",
+  "description": "Operation contract for a single terminal command executed within a TerminalSession. Every TerminalCommand is associated with a WorkspaceOperation task and must produce evidence. Commands must not create hidden workspace side effects: all filesystem writes, network calls, and subprocess spawns that affect operation state must be declared in sideEffects.",
+  "type": "object",
+  "required": ["id", "sessionId", "operationId", "command", "startedAt", "sideEffects"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique command identifier (ULID or UUID)."
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "TerminalSession this command belongs to."
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "WorkspaceOperation this command is part of."
+    },
+    "taskId": {
+      "type": "string",
+      "description": "OperationTask this command is assigned to."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/terminal-command/v1"
+    },
+    "command": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The executable name or path."
+    },
+    "args": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Command arguments. Secrets must not appear here; pass via environment or FDs."
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "description": "Environment variable overrides. Secret values must be referenced by name, not inlined."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Working directory override. Must be within an allowed filesystem root."
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "exitCode": {
+      "type": "integer"
+    },
+    "outputRef": {
+      "type": "string",
+      "description": "Content-addressable reference to captured stdout/stderr."
+    },
+    "sideEffects": {
+      "type": "object",
+      "description": "Declared side effects of this command. Hidden side effects are a conformance violation.",
+      "required": ["classification"],
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "type": "string",
+          "enum": ["none", "filesystem", "network", "mutable_state", "filesystem+network"],
+          "description": "Side effect category. 'none' means the command is read-only and produces no persistent changes."
+        },
+        "filesWritten": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Paths written or created. Must be within allowed filesystem roots."
+        },
+        "networkTargets": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Hosts or URLs contacted. Empty implies no network calls."
+        },
+        "subprocesses": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Child process names spawned by this command."
+        }
+      }
+    },
+    "policyGateId": {
+      "type": "string",
+      "description": "PolicyGateRecord that admitted this command."
+    },
+    "evidenceRef": {
+      "type": "string",
+      "description": "Reference to the terminal.command.evidence artifact for this command."
+    }
+  }
+}

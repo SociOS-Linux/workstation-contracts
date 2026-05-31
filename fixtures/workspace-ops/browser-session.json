@@ -1,0 +1,24 @@
+{
+  "_comment": "Fixture: Valid BrowserSession with scoped explicit-url capture. The captureScope restricts capture to the declared URL list. evidenceRef points to the browser.capture.evidence artifact.",
+  "id": "01HXYZ9ABC002BROWSESS",
+  "operationId": "01HXYZ9ABCOP002",
+  "deviceId": "urn:sourceos:device:abc123def456",
+  "schemaVersion": "workspace-ops/browser-session/v1",
+  "implementation": "bearbrowser",
+  "startedAt": "2026-05-06T11:00:00Z",
+  "endedAt": "2026-05-06T11:05:30Z",
+  "captureScope": {
+    "mode": "explicit-urls",
+    "urls": [
+      "https://docs.sourceos.io/workspace-ops",
+      "https://github.com/SociOS-Linux/workstation-contracts"
+    ]
+  },
+  "captureIds": [
+    "01HXYZ9ABC003WEBCAP",
+    "01HXYZ9ABC004WEBCAP"
+  ],
+  "downloadIds": [],
+  "policyGateId": "01HXYZ9ABCPG002",
+  "evidenceRef": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+}
