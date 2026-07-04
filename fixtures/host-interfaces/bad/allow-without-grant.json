@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "host-interfaces/envelope/v1",
+  "id": "env-bad-001",
+  "workspaceId": "ws-agentmachine-01",
+  "interfaceKind": "terminal-pty",
+  "direction": "response",
+  "decidedAt": "2026-05-03T12:00:00Z",
+  "requestedCapabilities": [
+    "pty.attach"
+  ],
+  "grant": null,
+  "result": "allow",
+  "receipt": {
+    "schemaVersion": "host-interfaces/receipt/v1",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "terminal-pty",
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "grantId": null,
+    "result": "allow",
+    "redactionSummary": {
+      "redactedFields": [],
+      "redactionCount": 0
+    },
+    "decidedAt": "2026-05-03T12:00:00Z"
+  }
+}

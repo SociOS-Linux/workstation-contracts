@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "host-interfaces/envelope/v1",
+  "id": "env-deny-001",
+  "workspaceId": "ws-agentmachine-01",
+  "interfaceKind": "terminal-pty",
+  "direction": "response",
+  "decidedAt": "2026-05-03T12:00:00Z",
+  "requestedCapabilities": [
+    "pty.attach"
+  ],
+  "grant": null,
+  "result": "deny",
+  "receipt": {
+    "schemaVersion": "host-interfaces/receipt/v1",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "terminal-pty",
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "grantId": null,
+    "result": "deny",
+    "redactionSummary": {
+      "redactedFields": [
+        "pty.env.SECRET"
+      ],
+      "redactionCount": 1
+    },
+    "decidedAt": "2026-05-03T12:00:00Z",
+    "denialReason": "deny-by-default: no grant presented for the requested interface"
+  },
+  "denialReason": "deny-by-default: no grant presented for the requested interface"
+}

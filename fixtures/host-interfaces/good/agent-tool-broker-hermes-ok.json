@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "host-interfaces/envelope/v1",
+  "id": "env-at-001",
+  "workspaceId": "ws-agentmachine-01",
+  "interfaceKind": "agent-tool",
+  "direction": "response",
+  "decidedAt": "2026-05-03T12:00:00Z",
+  "requestedCapabilities": [
+    "tool.invoke"
+  ],
+  "grant": {
+    "schemaVersion": "host-interfaces/grant/v1",
+    "grantId": "grant-at-01",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "agent-tool",
+    "issuedAt": "2026-05-01T00:00:00Z",
+    "expiresAt": "2026-12-31T23:59:59Z",
+    "scope": [
+      "tool.invoke"
+    ],
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "revoked": false
+  },
+  "result": "allow",
+  "receipt": {
+    "schemaVersion": "host-interfaces/receipt/v1",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "agent-tool",
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "grantId": "grant-at-01",
+    "result": "allow",
+    "redactionSummary": {
+      "redactedFields": [
+        "tool.apiKey"
+      ],
+      "redactionCount": 1
+    },
+    "decidedAt": "2026-05-03T12:00:00Z"
+  },
+  "negotiatedCapabilities": [
+    "tool.invoke"
+  ],
+  "toolId": "hermes"
+}

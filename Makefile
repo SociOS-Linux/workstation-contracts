@@ -2,7 +2,7 @@ VENV ?= .venv
 PY ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-workspace-ops clean
+.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-host-interfaces validate-workspace-ops clean
 
 help:
 	@echo "Targets:"
@@ -11,6 +11,7 @@ help:
 	@echo "  make validate            - validate example contracts and conformance fixtures"
 	@echo "  make validate-fog-node   - offline: validate the fog-node contract + emit receipt"
 	@echo "  make check-fog-node-host - runtime: check THIS host's fog-node conformance (fog node only)"
+	@echo "  make validate-host-interfaces - validate Agent Machine host-interface envelopes (good pass / bad fail)"
 	@echo "  make validate-workspace-ops - validate workspace-ops fixtures and conformance"
 	@echo "  make clean               - remove venv and caches"
 
@@ -47,6 +48,21 @@ validate:
 	done
 	@echo "--- Validating fog-node contract (offline, CI-safe) ---"
 	$(PY) tools/check_fog_node.py --check-contract contracts/fog-node.contract.json --receipt evidence/fog-node.check-receipt.json
+	@echo "--- Validating host-interface envelopes ---"
+	@$(MAKE) --no-print-directory validate-host-interfaces PY=$(PY)
+
+validate-host-interfaces:
+	@echo "GOOD host-interface envelopes (must pass):"
+	$(PY) tools/validate_host_interface.py fixtures/host-interfaces/good/*.json
+	@echo "BAD host-interface envelopes (must fail):"
+	@for f in fixtures/host-interfaces/bad/*.json; do \
+		if $(PY) tools/validate_host_interface.py "$$f" >/dev/null 2>&1; then \
+			echo "ERR: expected failure but validated: $$f"; \
+			exit 1; \
+		else \
+			echo "OK: failed as expected: $$f"; \
+		fi; \
+	done
 
 validate-fog-node:
 	$(PY) tools/check_fog_node.py --check-contract contracts/fog-node.contract.json --receipt evidence/fog-node.check-receipt.json

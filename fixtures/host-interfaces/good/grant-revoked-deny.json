@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "host-interfaces/envelope/v1",
+  "id": "env-rev-001",
+  "workspaceId": "ws-agentmachine-01",
+  "interfaceKind": "editor",
+  "direction": "response",
+  "decidedAt": "2026-05-03T12:00:00Z",
+  "requestedCapabilities": [
+    "editor.applyEdit"
+  ],
+  "grant": {
+    "schemaVersion": "host-interfaces/grant/v1",
+    "grantId": "grant-ed-rev",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "editor",
+    "issuedAt": "2026-05-01T00:00:00Z",
+    "expiresAt": "2026-12-31T23:59:59Z",
+    "scope": [
+      "editor.applyEdit"
+    ],
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "revoked": true,
+    "revokedAt": "2026-05-02T00:00:00Z"
+  },
+  "result": "deny",
+  "receipt": {
+    "schemaVersion": "host-interfaces/receipt/v1",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "editor",
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "grantId": "grant-ed-rev",
+    "result": "deny",
+    "redactionSummary": {
+      "redactedFields": [
+        "workspace.absolutePath"
+      ],
+      "redactionCount": 1
+    },
+    "decidedAt": "2026-05-03T12:00:00Z",
+    "denialReason": "grant was revoked"
+  },
+  "denialReason": "grant was revoked"
+}

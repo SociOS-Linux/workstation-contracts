@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "host-interfaces/envelope/v1",
+  "id": "env-pty-001",
+  "workspaceId": "ws-agentmachine-01",
+  "interfaceKind": "terminal-pty",
+  "direction": "response",
+  "decidedAt": "2026-05-03T12:00:00Z",
+  "requestedCapabilities": [
+    "pty.attach",
+    "pty.resize"
+  ],
+  "grant": {
+    "schemaVersion": "host-interfaces/grant/v1",
+    "grantId": "grant-pty-01",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "terminal-pty",
+    "issuedAt": "2026-05-01T00:00:00Z",
+    "expiresAt": "2026-12-31T23:59:59Z",
+    "scope": [
+      "pty.attach",
+      "pty.resize"
+    ],
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "revoked": false
+  },
+  "result": "allow",
+  "receipt": {
+    "schemaVersion": "host-interfaces/receipt/v1",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "terminal-pty",
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "grantId": "grant-pty-01",
+    "result": "allow",
+    "redactionSummary": {
+      "redactedFields": [
+        "pty.env.SECRET"
+      ],
+      "redactionCount": 1
+    },
+    "decidedAt": "2026-05-03T12:00:00Z"
+  },
+  "negotiatedCapabilities": [
+    "pty.attach",
+    "pty.resize"
+  ]
+}

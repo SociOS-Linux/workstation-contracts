@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/host-interfaces/host-interface-envelope.schema.json",
+  "title": "HostInterfaceEnvelope",
+  "description": "Broker envelope for an Agent Machine host interface (terminal PTY, browser, editor, or agent-tool). The host interface layer connects local terminal/browser/editor/agent-tool surfaces to an internal Podman-backed Agent Machine. Access is deny-by-default: an allow decision requires a present, unexpired, unrevoked grant whose scope covers the requested capabilities. This is a conformance contract, not a production broker implementation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "workspaceId",
+    "interfaceKind",
+    "direction",
+    "decidedAt",
+    "requestedCapabilities",
+    "result",
+    "receipt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "host-interfaces/envelope/v1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspaceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "interfaceKind": {
+      "type": "string",
+      "enum": [
+        "terminal-pty",
+        "browser",
+        "editor",
+        "agent-tool"
+      ]
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "request",
+        "response"
+      ]
+    },
+    "decidedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "toolId": {
+      "type": "string",
+      "description": "For interfaceKind=agent-tool: the tool being brokered (e.g. hermes). Tool-agnostic; no tool code is vendored."
+    },
+    "requestedCapabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "negotiatedCapabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Capabilities granted after negotiation (subset of requested \u2229 grant.scope)."
+    },
+    "grant": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/grant"
+        }
+      ],
+      "description": "The admitting grant, or null (deny-by-default)."
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "allow",
+        "deny"
+      ]
+    },
+    "denialReason": {
+      "type": "string"
+    },
+    "receipt": {
+      "$ref": "#/$defs/receipt"
+    }
+  },
+  "$defs": {
+    "grant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "grantId",
+        "workspaceId",
+        "interfaceKind",
+        "issuedAt",
+        "expiresAt",
+        "scope",
+        "policyHash"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "host-interfaces/grant/v1"
+        },
+        "grantId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interfaceKind": {
+          "type": "string",
+          "enum": [
+            "terminal-pty",
+            "browser",
+            "editor",
+            "agent-tool"
+          ]
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "revoked": {
+          "type": "boolean"
+        },
+        "revokedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Capabilities this grant authorizes (deny-by-default: anything outside scope is denied)."
+        },
+        "policyHash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "workspaceId",
+        "interfaceKind",
+        "policyHash",
+        "grantId",
+        "result",
+        "redactionSummary",
+        "decidedAt"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "host-interfaces/receipt/v1"
+        },
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interfaceKind": {
+          "type": "string",
+          "enum": [
+            "terminal-pty",
+            "browser",
+            "editor",
+            "agent-tool"
+          ]
+        },
+        "policyHash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "grantId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Grant that admitted the decision, or null for deny-by-default."
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "deny"
+          ]
+        },
+        "denialReason": {
+          "type": "string"
+        },
+        "redactionSummary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "redactedFields",
+            "redactionCount"
+          ],
+          "properties": {
+            "redactedFields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "redactionCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "decidedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
