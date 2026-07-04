@@ -67,3 +67,20 @@ Future PRs in this repo should add:
 2. validation tooling that checks substrate and runtime prerequisites
 3. CI examples for fog node conformance runs
 4. evidence outputs suitable for downstream automation / policy review
+
+## Running the checks
+
+The fog-node checker has two lanes, both emitting a JSON evidence receipt
+(`fog-node.check-receipt.v0`).
+
+- **Offline contract lane (CI-safe)** — validates `contracts/fog-node.contract.json`
+  and cross-checks that the checker and the contract agree on the required
+  `/srv/fog/*` paths. Wired into `make validate`; also `make validate-fog-node`.
+  No host access, no network.
+- **Host runtime lane** — `make check-fog-node-host`, run **on a fog node**: checks
+  the real `/srv/fog/*` paths, a container host (podman/docker), and LVM (`vgs`).
+  Not run in CI (a generic runner is not a fog node).
+
+The generated receipt is written to `evidence/fog-node.check-receipt.json`
+(git-ignored); a committed reference lives at
+`evidence/fog-node.check-receipt.example.json`.

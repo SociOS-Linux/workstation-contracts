@@ -2,13 +2,15 @@ VENV ?= .venv
 PY ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: help doctor venv deps validate validate-workspace-ops clean
+.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-workspace-ops clean
 
 help:
 	@echo "Targets:"
 	@echo "  make doctor              - print repo identity + key paths"
 	@echo "  make deps                - create/update .venv and install requirements"
 	@echo "  make validate            - validate example contracts and conformance fixtures"
+	@echo "  make validate-fog-node   - offline: validate the fog-node contract + emit receipt"
+	@echo "  make check-fog-node-host - runtime: check THIS host's fog-node conformance (fog node only)"
 	@echo "  make validate-workspace-ops - validate workspace-ops fixtures and conformance"
 	@echo "  make clean               - remove venv and caches"
 
@@ -43,6 +45,15 @@ validate:
 			echo "OK: failed as expected: $$f"; \
 		fi; \
 	done
+	@echo "--- Validating fog-node contract (offline, CI-safe) ---"
+	$(PY) tools/check_fog_node.py --check-contract contracts/fog-node.contract.json --receipt evidence/fog-node.check-receipt.json
+
+validate-fog-node:
+	$(PY) tools/check_fog_node.py --check-contract contracts/fog-node.contract.json --receipt evidence/fog-node.check-receipt.json
+
+check-fog-node-host:
+	@echo "Runtime host check — run this ON a fog node, not in CI."
+	$(PY) tools/check_fog_node.py --check-host --receipt evidence/fog-node.check-receipt.json
 
 validate-workspace-ops:
 	@echo "--- Validating workspace-ops fixture files ---"
