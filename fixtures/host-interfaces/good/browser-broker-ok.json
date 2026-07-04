@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "host-interfaces/envelope/v1",
+  "id": "env-br-001",
+  "workspaceId": "ws-agentmachine-01",
+  "interfaceKind": "browser",
+  "direction": "response",
+  "decidedAt": "2026-05-03T12:00:00Z",
+  "requestedCapabilities": [
+    "browser.navigate",
+    "browser.capture"
+  ],
+  "grant": {
+    "schemaVersion": "host-interfaces/grant/v1",
+    "grantId": "grant-br-01",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "browser",
+    "issuedAt": "2026-05-01T00:00:00Z",
+    "expiresAt": "2026-12-31T23:59:59Z",
+    "scope": [
+      "browser.navigate",
+      "browser.capture"
+    ],
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "revoked": false
+  },
+  "result": "allow",
+  "receipt": {
+    "schemaVersion": "host-interfaces/receipt/v1",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "browser",
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "grantId": "grant-br-01",
+    "result": "allow",
+    "redactionSummary": {
+      "redactedFields": [
+        "cookie",
+        "authorization-header"
+      ],
+      "redactionCount": 2
+    },
+    "decidedAt": "2026-05-03T12:00:00Z"
+  },
+  "negotiatedCapabilities": [
+    "browser.navigate",
+    "browser.capture"
+  ]
+}

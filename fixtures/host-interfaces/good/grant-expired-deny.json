@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "host-interfaces/envelope/v1",
+  "id": "env-exp-001",
+  "workspaceId": "ws-agentmachine-01",
+  "interfaceKind": "browser",
+  "direction": "response",
+  "decidedAt": "2026-05-03T12:00:00Z",
+  "requestedCapabilities": [
+    "browser.capture"
+  ],
+  "grant": {
+    "schemaVersion": "host-interfaces/grant/v1",
+    "grantId": "grant-br-exp",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "browser",
+    "issuedAt": "2026-05-01T00:00:00Z",
+    "expiresAt": "2026-05-02T00:00:00Z",
+    "scope": [
+      "browser.capture"
+    ],
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "revoked": false
+  },
+  "result": "deny",
+  "receipt": {
+    "schemaVersion": "host-interfaces/receipt/v1",
+    "workspaceId": "ws-agentmachine-01",
+    "interfaceKind": "browser",
+    "policyHash": "sha256:abababababababababababababababababababababababababababababababab",
+    "grantId": "grant-br-exp",
+    "result": "deny",
+    "redactionSummary": {
+      "redactedFields": [
+        "cookie"
+      ],
+      "redactionCount": 1
+    },
+    "decidedAt": "2026-05-03T12:00:00Z",
+    "denialReason": "grant expired before decision time"
+  },
+  "denialReason": "grant expired before decision time"
+}

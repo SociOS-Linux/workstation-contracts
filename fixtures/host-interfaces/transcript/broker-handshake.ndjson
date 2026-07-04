@@ -1,0 +1,5 @@
+{"t": 0, "dir": "c->b", "type": "hello", "interfaceKind": "agent-tool", "toolId": "hermes", "protocol": "host-interfaces/v1", "requestedCapabilities": ["tool.invoke", "tool.stream"]}
+{"t": 1, "dir": "b->c", "type": "hello-ack", "protocol": "host-interfaces/v1", "serverCapabilities": ["tool.invoke", "tool.stream", "tool.cancel"]}
+{"t": 2, "dir": "c->b", "type": "grant-present", "grantId": "grant-at-01", "workspaceId": "ws-agentmachine-01"}
+{"t": 3, "dir": "b->c", "type": "negotiate", "grantedCapabilities": ["tool.invoke", "tool.stream"], "deniedCapabilities": [], "policyHash": "sha256:abababababababababababababababababababababababababababababababab"}
+{"t": 4, "dir": "b->c", "type": "decision", "result": "allow", "grantId": "grant-at-01", "redactionSummary": {"redactedFields": ["tool.apiKey"], "redactionCount": 1}}
