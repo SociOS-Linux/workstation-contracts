@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/file-availability.schema.json",
+  "title": "FileAvailabilityState",
+  "description": "Contract for tracking the availability state of a file across local and remote locations. Files can be in one of five states: local (only on this device), remote (only on remote storage), syncing (transfer in progress), conflicted (divergent versions exist), or quarantined (flagged for policy review). Conflicted and quarantined states must not be resolved silently.",
+  "type": "object",
+  "required": ["id", "fileRef", "state", "deviceId", "observedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique state record identifier (ULID or UUID)."
+    },
+    "fileRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Logical file reference (e.g. relative path, content address, or stable file ID)."
+    },
+    "state": {
+      "type": "string",
+      "enum": ["local", "remote", "syncing", "conflicted", "quarantined"],
+      "description": "File availability state. 'conflicted' means divergent versions exist across devices. 'quarantined' means the file is held pending policy review and must not be accessible to local surfaces until cleared."
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Device from whose perspective this state is reported."
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "operationId": {
+      "type": "string",
+      "description": "WorkspaceOperation that triggered or is tracking this state."
+    },
+    "localPath": {
+      "type": "string",
+      "description": "Local filesystem path (present when state is local, syncing, conflicted, or quarantined)."
+    },
+    "remoteRef": {
+      "type": "string",
+      "description": "Remote storage reference URI (present when state is remote, syncing, or conflicted)."
+    },
+    "syncProgress": {
+      "type": "object",
+      "description": "Present when state=syncing.",
+      "additionalProperties": false,
+      "properties": {
+        "direction": {"type": "string", "enum": ["download", "upload"]},
+        "bytesTotal": {"type": "integer", "minimum": 0},
+        "bytesDone": {"type": "integer", "minimum": 0},
+        "transferId": {"type": "string"}
+      }
+    },
+    "conflictDetails": {
+      "type": "object",
+      "description": "Present when state=conflicted. Describes the conflicting versions.",
+      "additionalProperties": false,
+      "properties": {
+        "localChecksum": {"type": "string"},
+        "remoteChecksum": {"type": "string"},
+        "localModifiedAt": {"type": "string", "format": "date-time"},
+        "remoteModifiedAt": {"type": "string", "format": "date-time"},
+        "conflictingDeviceId": {"type": "string"},
+        "resolutionStrategy": {
+          "type": "string",
+          "enum": ["last-write-wins", "manual", "sourceos-merge", "quarantine"],
+          "description": "Configured resolution strategy. 'manual' and 'quarantine' require explicit human or policy decision."
+        },
+        "resolutionDecisionCardId": {
+          "type": "string",
+          "description": "DecisionCard recording the human resolution decision, if applicable."
+        }
+      }
+    },
+    "quarantineDetails": {
+      "type": "object",
+      "description": "Present when state=quarantined.",
+      "additionalProperties": false,
+      "properties": {
+        "reason": {"type": "string"},
+        "quarantinedAt": {"type": "string", "format": "date-time"},
+        "policyGateId": {"type": "string"},
+        "releaseDecisionCardId": {"type": "string"}
+      }
+    },
+    "provisionalId": {
+      "type": "string",
+      "description": "ProvisionalArtifactId for cross-device resume tracking of this file."
+    }
+  }
+}

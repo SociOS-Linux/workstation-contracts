@@ -1,0 +1,38 @@
+{
+  "api_version": "workstation-contracts.socios.io/v0.1",
+  "kind": "WorkstationContract",
+  "metadata": {
+    "id": "agent-execution-no-policy-gate",
+    "name": "Invalid local agent execution without policy gate",
+    "description": "This fixture must fail because local agent execution is attempted without a prior policy gate record. All LocalAgentExecution operations require a PolicyGateRecord with result=allow before execution. Ungated agent execution is a hard conformance violation.",
+    "labels": {
+      "sourceos.workspace_ops": "true",
+      "sourceos.local_agent_execution": "true"
+    }
+  },
+  "spec": {
+    "lanes": [
+      {
+        "name": "invalid-agent-execution-no-policy-gate",
+        "backend": {
+          "type": "container",
+          "container": {
+            "image": "ghcr.io/sourceos-linux/workstation-contracts-truth-lane@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "workdir": "/workspace"
+          }
+        },
+        "steps": [
+          {
+            "name": "bad-ungated-agent-execution",
+            "run": "sourceosctl workspace-ops local-agent-execution run --operation-id op-bad-003 --agent agent-machine --model llama3:8b --prompt-ref sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd --no-policy-gate"
+          }
+        ],
+        "evidence": {
+          "emit": [
+            "agent.execution.evidence"
+          ]
+        }
+      }
+    ]
+  }
+}

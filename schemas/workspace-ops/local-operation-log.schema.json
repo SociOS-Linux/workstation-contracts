@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/local-operation-log.schema.json",
+  "title": "LocalOperationLog",
+  "description": "A local, append-only log of events for a WorkspaceOperation on a specific device. Entries must be redacted before leaving the device boundary unless an explicit policy gate permits export.",
+  "type": "object",
+  "required": ["id", "deviceId", "operationId", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique log identifier (ULID or UUID)."
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Device that produced this log."
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "WorkspaceOperation this log belongs to."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/local-operation-log/v1"
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "redactionApplied": {
+      "type": "boolean",
+      "description": "Whether a DiagnosticRedaction pass has been applied to this log before export."
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": ["seq", "ts", "level", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Monotonically increasing sequence number within this log."
+          },
+          "ts": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "level": {
+            "type": "string",
+            "enum": ["debug", "info", "warn", "error", "audit"]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "redacted": {
+            "type": "boolean",
+            "description": "Whether this entry's message was modified by a redaction rule."
+          },
+          "sourceComponent": {
+            "type": "string",
+            "description": "The local surface or component that emitted this entry (e.g. turtlterm, bearbrowser, agent-machine)."
+          },
+          "taskId": {
+            "type": "string",
+            "description": "OperationTask this entry belongs to, if applicable."
+          },
+          "eventId": {
+            "type": "string",
+            "description": "OperationEvent this entry corresponds to, if applicable."
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

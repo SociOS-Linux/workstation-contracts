@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SociOS-Linux/workstation-contracts/blob/main/schemas/workspace-ops/local-agent-execution.schema.json",
+  "title": "LocalAgentExecution",
+  "description": "Operation contract for a local AI agent execution (e.g. agent-machine running a local model via llama.cpp or ollama). Every execution must have a prior PolicyGateRecord. Execution without a policy gate is a conformance violation. Output artifacts must be referenced and must not create hidden workspace side effects.",
+  "type": "object",
+  "required": ["id", "operationId", "deviceId", "agentId", "startedAt", "status", "policyGateId"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique execution identifier (ULID or UUID)."
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "taskId": {
+      "type": "string",
+      "description": "OperationTask this execution is assigned to."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "workspace-ops/local-agent-execution/v1"
+    },
+    "agentId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the agent implementation (e.g. agent-machine, sourceos-devtools-agent)."
+    },
+    "model": {
+      "type": "string",
+      "description": "Local model identifier (e.g. llama3:8b, mistral:7b). Must be a locally available model; remote model fetches require an explicit network policy gate."
+    },
+    "promptRef": {
+      "type": "string",
+      "description": "Content-addressable reference to the input prompt. Prompts containing secrets must be stored encrypted."
+    },
+    "contextRefs": {
+      "type": "array",
+      "description": "Content-addressable references to context documents provided to the agent.",
+      "items": {"type": "string"}
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "cancelled", "gated"]
+    },
+    "outputRef": {
+      "type": "string",
+      "description": "Content-addressable reference to the agent output artifact."
+    },
+    "sideEffects": {
+      "type": "object",
+      "description": "Declared side effects of this execution. Hidden side effects are a conformance violation.",
+      "required": ["classification"],
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "type": "string",
+          "enum": ["none", "filesystem", "network", "mutable_state", "filesystem+network"]
+        },
+        "filesWritten": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "networkTargets": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "policyGateId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "PolicyGateRecord that admitted this execution. This field is required: agent execution without a prior policy gate record is a conformance violation."
+    },
+    "evidenceRef": {
+      "type": "string",
+      "description": "Reference to the agent.execution.evidence artifact."
+    },
+    "tokenUsage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "promptTokens": {"type": "integer", "minimum": 0},
+        "completionTokens": {"type": "integer", "minimum": 0},
+        "totalTokens": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
