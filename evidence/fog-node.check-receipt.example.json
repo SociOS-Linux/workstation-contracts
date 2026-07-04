@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "fog-node.check-receipt.v0",
+  "contract": "fog-node",
+  "contractRef": "contracts/fog-node.contract.json",
+  "mode": "contract-offline",
+  "offline": true,
+  "networkRequired": false,
+  "passed": true,
+  "failures": [],
+  "checkedAt": "2026-07-04T00:00:00+00:00",
+  "os": {
+    "platform": "linux"
+  }
+}
