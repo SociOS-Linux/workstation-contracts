@@ -2,7 +2,7 @@ VENV ?= .venv
 PY ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: help doctor venv deps validate validate-workspace-ops clean
+.PHONY: help doctor venv deps validate validate-workspace-ops validate-fog-node clean
 
 help:
 	@echo "Targets:"
