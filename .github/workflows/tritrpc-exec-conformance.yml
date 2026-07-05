@@ -18,6 +18,7 @@ jobs:
       TRITRPC_REPO: https://github.com/SocioProphet/TriTRPC.git
       TRITRPC_COMMIT: 58741244057ed1346676c7b95c9a1ec940f12952
       TRITRPC_DIR: ${{ github.workspace }}/_deps/TriTRPC
+      TRPC_BIN: ${{ github.workspace }}/_deps/TriTRPC/rust/tritrpc_v1/target/debug/trpc
       IPC_DIR: ${{ github.workspace }}/reference/ipc-v0
     steps:
       - name: Checkout workstation-contracts
@@ -34,9 +35,9 @@ jobs:
       - name: Build TritRPC Rust CLI
         run: |
           set -euo pipefail
-          cd "$TRITRPC_DIR"
-          cargo build -p tritrpc_v1 --bin trpc
-          test -x "$TRITRPC_DIR/target/debug/trpc"
+          cd "$TRITRPC_DIR/rust/tritrpc_v1"
+          cargo build --bin trpc
+          test -x "$TRPC_BIN"
 
       - name: Run IPC reference tests
         run: |
@@ -52,7 +53,7 @@ jobs:
             --adapter "python -m src.adapters.tritrpc_bridge_adapter" \
             --out .workstation/reports/ipc-tritrpc-exec \
             --op tritrpc.fixture.verify \
-            --args-json "{\"execute\":true,\"trpc\":\"$TRITRPC_DIR/target/debug/trpc\",\"fixtures\":\"$TRITRPC_DIR/fixtures/vectors_hex_unary_rich.txt\",\"nonces\":\"$TRITRPC_DIR/fixtures/vectors_hex_unary_rich.txt.nonces\",\"receipt\":\".workstation/test-reports/tritrpc-rust-cli-check-exec.json\"}"
+            --args-json "{\"execute\":true,\"trpc\":\"$TRPC_BIN\",\"fixtures\":\"$TRITRPC_DIR/fixtures/vectors_hex_unary_rich.txt\",\"nonces\":\"$TRITRPC_DIR/fixtures/vectors_hex_unary_rich.txt.nonces\",\"receipt\":\".workstation/test-reports/tritrpc-rust-cli-check-exec.json\"}"
           test -f .workstation/reports/ipc-tritrpc-exec/run-receipt.json
           test -f .workstation/test-reports/tritrpc-rust-cli-check-exec.json
 
