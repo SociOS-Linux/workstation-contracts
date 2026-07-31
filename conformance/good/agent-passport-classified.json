@@ -1,0 +1,11 @@
+{
+  "kind": "AgentPassport",
+  "bundle_id": "com.anthropic.claudefordesktop",
+  "agent_class": "third_party",
+  "is_daemon": false,
+  "is_apple_signed": false,
+  "suppress_user_authorization_prompt": false,
+  "system_bundle": false,
+  "interrupt_level": "standard",
+  "capability_exceptions": []
+}
