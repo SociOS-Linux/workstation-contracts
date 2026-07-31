@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.srcos.ai/v2/SeamDefinition.json",
+  "title": "SeamDefinition",
+  "description": "VENDORED from SourceOS-Linux/sourceos-spec (T0-2, canonical owner). A typed architectural seam: an ungated boundary between two system layers that represents an attack surface. Seams are the estate's threat-model spine \u2014 each names where trust is not yet enforced, the vector that exploits it, and the gate that would close it. Canonical instance URN: urn:srcos:seam-definition:<seam_id_slug>. Schema version 1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "seam_id",
+    "name",
+    "boundary_from",
+    "boundary_to",
+    "attack_vector",
+    "gate_requirements",
+    "implementation_status",
+    "priority"
+  ],
+  "properties": {
+    "type": {
+      "const": "SeamDefinition",
+      "description": "Object discriminator, matching the repo convention (examples are mapped to their schema by this field). Optional."
+    },
+    "seam_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^SEAM-[0-9]{3}$",
+      "description": "Stable seam identifier, e.g. SEAM-013. Slugged into the URN urn:srcos:seam-definition:<seam_id_slug>."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable seam name."
+    },
+    "boundary_from": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The layer the seam originates at (e.g. MDM)."
+    },
+    "boundary_to": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The layer the seam crosses into (e.g. usernoted)."
+    },
+    "attack_vector": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How the ungated boundary is exploited."
+    },
+    "known_exploits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Concrete observed exploits or indicators for this seam."
+    },
+    "gate_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "What must be enforced to close the seam. Required and non-empty: a seam with no stated gate is not actionable."
+    },
+    "implementation_status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "designed",
+        "partially_gated",
+        "implemented"
+      ],
+      "description": "Gate maturity for this seam."
+    },
+    "linked_repos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Repos (and optionally issues) that own the gate work."
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium"
+      ],
+      "description": "Remediation priority."
+    },
+    "first_identified": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the seam was first identified."
+    },
+    "last_reviewed": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the seam was last reviewed."
+    }
+  }
+}

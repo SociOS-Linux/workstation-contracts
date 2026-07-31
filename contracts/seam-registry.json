@@ -1,0 +1,261 @@
+[
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-001",
+    "name": "EFI/NVRAM \u2192 OS",
+    "boundary_from": "EFI/NVRAM",
+    "boundary_to": "OS",
+    "attack_vector": "efi_rootkit.bin; csr-active-config=0x67 (SIP disabled)",
+    "known_exploits": [],
+    "gate_requirements": [
+      "boot attestation"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SourceOS-Linux/agent-machine#T2-3"
+    ],
+    "priority": "critical",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-002",
+    "name": "MDM \u2192 usernoted",
+    "boundary_from": "MDM",
+    "boundary_to": "usernoted",
+    "attack_vector": "Unauthorized MDM enrollment (IBM MaaS360)",
+    "known_exploits": [],
+    "gate_requirements": [
+      "MDM profile audit: flag unrecognized profiles"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SourceOS-Linux/agent-machine#T2-3"
+    ],
+    "priority": "critical",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-003",
+    "name": "SEP \u2192 Keybag",
+    "boundary_from": "SEP",
+    "boundary_to": "Keybag",
+    "attack_vector": "SEP non-participation in keybag operations (ANOMALY-007)",
+    "known_exploits": [],
+    "gate_requirements": [
+      "SEP participation check"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SourceOS-Linux/agent-machine#T2-3"
+    ],
+    "priority": "critical",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-004",
+    "name": "DNS \u2192 Application",
+    "boundary_from": "DNS",
+    "boundary_to": "Application",
+    "attack_vector": "Resolution returning 102.165.31.x (adversary IPs)",
+    "known_exploits": [],
+    "gate_requirements": [
+      "DNS pinning",
+      "DNSSEC"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SociOS-Linux/source-os#linux/dns-pinning"
+    ],
+    "priority": "critical",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-005",
+    "name": "TLS \u2192 Cipher Suite",
+    "boundary_from": "TLS",
+    "boundary_to": "CipherSuite",
+    "attack_vector": "RC4_128_MD5 cipher downgrade",
+    "known_exploits": [],
+    "gate_requirements": [
+      "TLS 1.2 minimum",
+      "cipher allowlist"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SociOS-Linux/source-os#linux/tls-enforcement"
+    ],
+    "priority": "critical",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-006",
+    "name": "OAuth Token \u2192 Device",
+    "boundary_from": "OAuthToken",
+    "boundary_to": "Device",
+    "attack_vector": "Token exfiltration via MITM",
+    "known_exploits": [],
+    "gate_requirements": [
+      "device-bound tokens"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SocioProphet/mcp-a2a-zero-trust"
+    ],
+    "priority": "high",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-007",
+    "name": "Knox/MDM \u2192 Android",
+    "boundary_from": "Knox/MDM",
+    "boundary_to": "Android",
+    "attack_vector": "Knox privilege above Android permissions",
+    "known_exploits": [],
+    "gate_requirements": [
+      "Knox audit",
+      "SemWifiSwitch check"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "future"
+    ],
+    "priority": "medium",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-008",
+    "name": "ManagedSpace \u2192 Spatial Auth",
+    "boundary_from": "ManagedSpace",
+    "boundary_to": "SpatialAuthorization",
+    "attack_vector": "displayUUID instability from firmware manipulation (ANOMALY-008)",
+    "known_exploits": [],
+    "gate_requirements": [
+      "displayUUID stability check",
+      "attestation timestamp on spatial authorization"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SourceOS-Linux/agent-machine#T2-3"
+    ],
+    "priority": "high",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-009",
+    "name": "Intelligence \u2192 Action Auth",
+    "boundary_from": "Intelligence",
+    "boundary_to": "ActionAuthorization",
+    "attack_vector": "Agent self-authorizing actions",
+    "known_exploits": [],
+    "gate_requirements": [
+      "dndAllowIntelligentManagement:false enforced",
+      "autonomous_action gated"
+    ],
+    "implementation_status": "partially_gated",
+    "linked_repos": [
+      "SocioProphet/ontogenesis#T1-4",
+      "SocioProphet/mcp-a2a-zero-trust#T4-2"
+    ],
+    "priority": "high",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-010",
+    "name": "Workflow Def \u2192 Execution",
+    "boundary_from": "WorkflowDefinition",
+    "boundary_to": "Execution",
+    "attack_vector": "Unsigned workflow injected",
+    "known_exploits": [],
+    "gate_requirements": [
+      "workflow signing",
+      "state-machine admission gate"
+    ],
+    "implementation_status": "designed",
+    "linked_repos": [
+      "SociOS-Linux/source-os",
+      "SourceOS-Linux/agent-machine"
+    ],
+    "priority": "high",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-011",
+    "name": "Agent Output \u2192 Ledger",
+    "boundary_from": "AgentOutput",
+    "boundary_to": "Ledger",
+    "attack_vector": "Local ledger tampered by MDM operator",
+    "known_exploits": [],
+    "gate_requirements": [
+      "external append-only ledger",
+      "crypto hash chain"
+    ],
+    "implementation_status": "designed",
+    "linked_repos": [
+      "SourceOS-Linux/agent-machine#T2-3",
+      "SociOS-Linux/source-os#T6-2"
+    ],
+    "priority": "critical",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-012",
+    "name": "Third-Party \u2192 Audio/Camera",
+    "boundary_from": "ThirdParty",
+    "boundary_to": "Audio/Camera",
+    "attack_vector": "avfoundation access undeclared",
+    "known_exploits": [],
+    "gate_requirements": [
+      "avfoundation access logged",
+      "undeclared access = kill switch"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SociOS-Linux/source-os#T6-2"
+    ],
+    "priority": "high",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  },
+  {
+    "type": "SeamDefinition",
+    "seam_id": "SEAM-013",
+    "name": "Claude Desktop Telemetry \u2192 Platform Data",
+    "boundary_from": "ClaudeDesktopTelemetry",
+    "boundary_to": "PlatformData",
+    "attack_vector": "sessionSampleRate:100 (100% of sessions); sensitive output can route through a fully-sampled telemetry surface",
+    "known_exploits": [],
+    "gate_requirements": [
+      "telemetry boundary check in ActivationDecision (advisory)",
+      "sensitive output must not route through a 100%-sampled surface"
+    ],
+    "implementation_status": "open",
+    "linked_repos": [
+      "SourceOS-Linux/agent-machine#T2-1"
+    ],
+    "priority": "critical",
+    "first_identified": "2026-06-09",
+    "last_reviewed": "2026-06-09"
+  }
+]
