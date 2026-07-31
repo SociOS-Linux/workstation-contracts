@@ -50,6 +50,8 @@ validate:
 	$(PY) tools/check_fog_node.py --check-contract contracts/fog-node.contract.json --receipt evidence/fog-node.check-receipt.json
 	@echo "--- Validating host-interface envelopes ---"
 	@$(MAKE) --no-print-directory validate-host-interfaces PY=$(PY)
+	@echo "--- Validating seam registry (13 seams) ---"
+	$(PY) tools/validate_seam_registry.py
 
 validate-host-interfaces:
 	@echo "GOOD host-interface envelopes (must pass):"
