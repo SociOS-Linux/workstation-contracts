@@ -63,6 +63,44 @@ def iter_steps(doc):
         for step in lane.get("steps", []):
             yield lane, step
 
+AGENT_CLASSES = {
+    "system_core",
+    "intelligence_automation",
+    "app_helper",
+    "legacy_bridge",
+    "third_party",
+}
+
+
+def validate_agent_passport(doc, p) -> bool:
+    """Validate an AgentPassport conformance fixture (kind: AgentPassport).
+
+    Two governance invariants, enforced by rejection:
+      * unclassified agents are not permitted — anySource is not a valid class;
+      * a third_party agent may not claim system_core capabilities
+        (suppress_user_authorization_prompt / system_bundle = class elevation).
+    """
+    agent_class = doc.get("agent_class")
+    if agent_class not in AGENT_CLASSES:
+        print(
+            f"FAIL agent.class: {p}: unclassified agents are not permitted "
+            f"(agent_class={agent_class!r}; anySource is not a valid class)",
+            file=sys.stderr,
+        )
+        return False
+    if agent_class == "third_party" and (
+        doc.get("suppress_user_authorization_prompt") is True
+        or doc.get("system_bundle") is True
+    ):
+        print(
+            f"FAIL agent.class.elevation: {p}: third_party cannot claim system_core "
+            f"capabilities (suppress_user_authorization_prompt / system_bundle)",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: tools/validate_contract.py <contract.json> [<contract2.json>...]", file=sys.stderr)
@@ -74,6 +112,13 @@ def main():
     for arg in sys.argv[1:]:
         p = Path(arg)
         doc = load_json(p)
+
+        # AgentPassport conformance fixtures (T5) use their own agent-class
+        # rules, not the WorkstationContract schema.
+        if doc.get("kind") == "AgentPassport":
+            if not validate_agent_passport(doc, p):
+                ok = False
+            continue
 
         try:
             jsonschema.validate(doc, schema)

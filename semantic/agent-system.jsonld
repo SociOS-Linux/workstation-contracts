@@ -1,0 +1,14 @@
+{
+  "@context": {
+    "agentsys": "https://spec.sourceos.dev/vocab/agent-system#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#"
+  },
+  "@id": "https://spec.sourceos.dev/vocab/agent-system",
+  "rdfs:comment": "Agent-system vocabulary import for workstation-contracts conformance. Mirrors the canonical seed in sourceos-spec (T0-3: semantic/agent-system-vocabulary.jsonld) and the OWL/SHACL realization in ontogenesis (T1). Terms: AgentClass, PermissionFlag, ManagedSpace, SeamDefinition, CapabilityException, BundleIdentity.",
+  "@graph": [
+    {"@id": "agentsys:AgentClass", "rdfs:label": "Agent Class"},
+    {"@id": "agentsys:PermissionFlag", "rdfs:label": "Permission Flag"},
+    {"@id": "agentsys:CapabilityException", "rdfs:label": "Capability Exception"},
+    {"@id": "agentsys:BundleIdentity", "rdfs:label": "Bundle Identity"}
+  ]
+}

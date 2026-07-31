@@ -1,0 +1,10 @@
+{
+  "kind": "AgentPassport",
+  "bundle_id": "com.evil.app",
+  "agent_class": "third_party",
+  "is_daemon": false,
+  "is_apple_signed": false,
+  "suppress_user_authorization_prompt": true,
+  "system_bundle": true,
+  "interrupt_level": "standard"
+}
