@@ -30,7 +30,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from inference_receipt_emitter import emit_receipt  # noqa: E402
+from inference_receipt_emitter import canonical, emit_receipt  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND = os.environ.get("RECEIPT_GATEWAY_BACKEND", "http://127.0.0.1:8899").rstrip("/")
@@ -53,12 +53,22 @@ def model_digest() -> str:
     raise RuntimeError("set RECEIPT_GATEWAY_MODEL_DIGEST or RECEIPT_GATEWAY_MODEL_PATH")
 
 
+_CHAT = "/v1/chat/completions"
+_EMBED = "/v1/embeddings"
+_SUPPORTED = (_CHAT, _EMBED)
+
+
 def _messages_text(req: dict) -> str:
     return "\n".join(f"{m.get('role')}: {m.get('content', '')}" for m in req.get("messages", []))
 
 
-def _maybe_emit(req_body: bytes, resp_bytes: bytes, content_type: str, digest: str) -> None:
-    """Emit a receipt only for a real, non-streaming JSON completion with string content."""
+def _embed_input_text(req: dict) -> str:
+    inp = req.get("input", "")
+    return "\n".join(inp) if isinstance(inp, list) else str(inp)
+
+
+def _maybe_emit(path: str, req_body: bytes, resp_bytes: bytes, content_type: str, digest: str) -> None:
+    """Emit the right receipt for a real, non-streaming JSON response."""
     if "application/json" not in content_type.lower():
         return  # streaming (SSE) or non-JSON error body — pass through, no receipt
     try:
@@ -66,44 +76,53 @@ def _maybe_emit(req_body: bytes, resp_bytes: bytes, content_type: str, digest: s
         req = json.loads(req_body)
     except (json.JSONDecodeError, ValueError):
         return
-    msg = (body.get("choices") or [{}])[0].get("message") or {}
-    output = msg.get("content")
-    if not isinstance(output, str):
-        return  # tool-call / null content — nothing to hash as a completion
     usage = body.get("usage") or {}
-    emit_receipt(LEDGER, base_model_digest=digest, task="chat.completion",
-                 input_text=_messages_text(req), output_text=output,
-                 provider_daemon="inferenced", tier="T1", compute_device="cpu",
-                 input_token_count=usage.get("prompt_tokens"),
-                 output_token_count=usage.get("completion_tokens"))
+    if path == _CHAT:
+        output = ((body.get("choices") or [{}])[0].get("message") or {}).get("content")
+        if not isinstance(output, str):
+            return  # tool-call / null content — nothing to hash as a completion
+        emit_receipt(LEDGER, base_model_digest=digest, task="chat.completion",
+                     input_text=_messages_text(req), output_text=output,
+                     provider_daemon="inferenced", tier="T1", compute_device="cpu",
+                     input_token_count=usage.get("prompt_tokens"),
+                     output_token_count=usage.get("completion_tokens"))
+    elif path == _EMBED:
+        vectors = [d.get("embedding") for d in (body.get("data") or [])]
+        if not vectors or not all(isinstance(v, list) for v in vectors):
+            return
+        # hash the real returned vectors; embeddings are a T0 workload with no output tokens
+        emit_receipt(LEDGER, base_model_digest=digest, task="embedding",
+                     input_text=_embed_input_text(req), output_text=canonical(vectors),
+                     provider_daemon="embeddingd", tier="T0", compute_device="cpu",
+                     input_token_count=usage.get("prompt_tokens"), output_token_count=None)
 
 
-def forward_and_receipt(req_body: bytes, digest: str, headers: dict | None = None
+def forward_and_receipt(path: str, req_body: bytes, digest: str, headers: dict | None = None
                         ) -> tuple[int, str, bytes]:
-    """Forward to the backend, return its (status, content-type, body); emit on success."""
+    """Forward to the backend path, return its (status, content-type, body); emit on success."""
     fwd = {k: v for k, v in (headers or {}).items() if k.lower() in _FORWARD_HEADERS}
     fwd.setdefault("Content-Type", "application/json")
-    r = urllib.request.Request(f"{BACKEND}/v1/chat/completions", data=req_body,
-                               headers=fwd, method="POST")
+    r = urllib.request.Request(f"{BACKEND}{path}", data=req_body, headers=fwd, method="POST")
     try:
         with urllib.request.urlopen(r, timeout=300) as resp:
             raw, status = resp.read(), resp.status
             ctype = resp.headers.get("Content-Type", "application/json")
     except urllib.error.HTTPError as e:  # non-2xx: return the backend's real error, no receipt
         return e.code, e.headers.get("Content-Type", "application/json"), e.read()
-    _maybe_emit(req_body, raw, ctype, digest)
+    _maybe_emit(path, req_body, raw, ctype, digest)
     return status, ctype, raw
 
 
 def _handler(digest: str):
     class H(BaseHTTPRequestHandler):
         def do_POST(self):
-            if self.path.rstrip("/") != "/v1/chat/completions":
+            path = self.path.rstrip("/")
+            if path not in _SUPPORTED:
                 self.send_error(404); return
             n = int(self.headers.get("Content-Length", 0))
             try:
                 status, ctype, raw = forward_and_receipt(
-                    self.rfile.read(n), digest, dict(self.headers))
+                    path, self.rfile.read(n), digest, dict(self.headers))
             except urllib.error.URLError as exc:  # backend unreachable
                 self.send_error(502, f"backend unreachable: {exc}"); return
             self.send_response(status)
@@ -130,7 +149,7 @@ def _selftest() -> int:
     req = json.dumps({"messages": [{"role": "user", "content":
                      "In one sentence, what is a knowledge graph?"}], "max_tokens": 40}).encode()
     try:
-        status, _ctype, _raw = forward_and_receipt(req, digest)
+        status, _ctype, _raw = forward_and_receipt(_CHAT, req, digest)
     except urllib.error.URLError as exc:
         print(f"ERR: backend forward failed (is a provider at {BACKEND}?): {exc}", file=sys.stderr)
         return 2

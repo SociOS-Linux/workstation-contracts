@@ -2,21 +2,28 @@
 
 `tools/receipt_gateway.py` is the primitive that makes **every** estate inference emit a
 receipt without touching each service: a drop-in transparent proxy in front of an
-OpenAI-compatible provider (llama-server, vLLM, ollama). It forwards `/v1/chat/completions`
-to the real backend (preserving client headers like `Authorization`) and, on a successful
-non-streaming JSON response, records a schema-conformant, hash-chained `InferenceReceipt`
-with the real model digest, real input/output hashes, and the backend's **real usage token
-counts** (`usage.prompt_tokens`/`completion_tokens`).
+OpenAI-compatible provider (llama-server, vLLM, ollama). It forwards both
+**`/v1/chat/completions`** and **`/v1/embeddings`** to the real backend (preserving client
+headers like `Authorization`) and, on a successful non-streaming JSON response, records a
+schema-conformant, hash-chained `InferenceReceipt` with the real model digest, real
+input/output hashes, and the backend's **real usage token counts**. Chat →
+`task: chat.completion, tier: T1`; embeddings → `task: embedding, tier: T0` (output hash =
+the real returned vectors). This covers the estate's two real inference shapes — chat and
+the ingestion/RAG embedding path (`prophet-platform/apps/embeddings`, the sovereign
+`/v1/embeddings` service).
 
 Residency: the receipt is `on_device_only` — appropriate for a **local** backend, which is
 what this reference proves. An off-device/enterprise backend requires the escalation-grant
 path (lease + escalation chain) and is out of scope for this gateway.
 
 ## Proven live
-The gateway was run against a real `llama-server` (Qwen2.5-0.5B-Instruct, Apache-2.0):
-it forwarded a real `/v1/chat/completions` (HTTP 200) and emitted a real receipt
-(`task: chat.completion`, real weight digest `sha256:74a4da8c…`) to
-`evidence/model-plane/gateway-ledger.jsonl`. `tools/validate_live_receipts.py` validates
+The gateway was run against real `llama-server` backends (both Apache-2.0):
+- **chat** — Qwen2.5-0.5B-Instruct: forwarded a real `/v1/chat/completions` (200) → real
+  `task: chat.completion` receipt (weight digest `sha256:74a4da8c…`);
+- **embeddings** — nomic-embed-text-v1.5 (`--embedding`): forwarded a real `/v1/embeddings`
+  (200, 768-dim vectors) → real `task: embedding` receipt (weight digest `sha256:d4e38889…`).
+
+Both landed in `evidence/model-plane/gateway-ledger.jsonl` (hash-chained). `tools/validate_live_receipts.py` validates
 **all** ledgers under `evidence/model-plane/` (the CLI-shim ledger + this gateway ledger)
 in CI — schema conformance + unbroken chain, no model needed.
 
