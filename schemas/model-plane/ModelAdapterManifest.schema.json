@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.srcos.ai/v2/ModelAdapterManifest.json",
+  "title": "ModelAdapterManifest",
+  "description": "VENDORED from SourceOS-Linux/sourceos-spec (Tranche 7, canonical owner). Content-addressed store manifest for a LoRA (model) adapter in the Model Plane store (Tranche 7, T7-2). Sits at /var/lib/sourceos/models/adapters/sha256-<digest>/manifest.json. Named ModelAdapterManifest \u2014 NOT AdapterManifest \u2014 to avoid collision with AdapterDescriptor, which types connector/actuation adapters (api/cli/sdk), an unrelated sense of \"adapter\". A valid adapter manifest MUST declare the base-model digest it binds to (SEAM-017: rejected on mismatch) and MUST carry signature info (SEAM-017 signature verification). Referenced by AdapterPromotionDecision via candidateAdapterDigest / baseModelDigest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "type",
+    "specVersion",
+    "adapterDigest",
+    "baseModelDigest",
+    "task",
+    "rank",
+    "alpha",
+    "targetModules",
+    "format",
+    "license",
+    "signature"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^urn:srcos:model-adapter-manifest:",
+      "description": "Stable URN identifier. Pattern: urn:srcos:model-adapter-manifest:<local-id>"
+    },
+    "type": {
+      "const": "ModelAdapterManifest",
+      "description": "Discriminator constant \u2014 always \"ModelAdapterManifest\"."
+    },
+    "specVersion": {
+      "type": "string",
+      "description": "Spec version of this document, e.g. \"2.1.0\"."
+    },
+    "adapterDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "Content address of the adapter weights \u2014 the directory key in the content-addressed store."
+    },
+    "displayName": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Human-readable adapter name, e.g. \"summarization-v3\"."
+    },
+    "baseModelDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "Digest of the base model this adapter binds to. Loading against a base whose digest differs is rejected (SEAM-017)."
+    },
+    "baseModelManifestRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^urn:srcos:model-manifest:",
+      "description": "Optional URN of the ModelManifest for the base model; its modelDigest must equal baseModelDigest."
+    },
+    "task": {
+      "type": "string",
+      "description": "Task the adapter specializes, e.g. summarization, translation-de-en, agent_classification."
+    },
+    "rank": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "LoRA rank (r)."
+    },
+    "alpha": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "LoRA scaling factor (alpha)."
+    },
+    "targetModules": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Attention/MLP submodules the adapter targets, e.g. q_proj, v_proj, o_proj, gate_proj. Required and non-empty \u2014 an adapter that does not declare its target modules is not applicable by a consumer.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "safetensors",
+        "gguf",
+        "mlx"
+      ],
+      "description": "On-disk adapter format."
+    },
+    "tokenizerDigest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "Tokenizer digest if the adapter changes tokenization; null to inherit the base model's tokenizer."
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier for the adapter weights (e.g. Apache-2.0, MIT). Required so the MIT/Apache-only rule is checkable; a distilled adapter also inherits any base-model license constraint."
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "keyId",
+        "signatureDigest"
+      ],
+      "description": "Detached-signature descriptor. Required \u2014 no adapter loads without signature verification (SEAM-017).",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "description": "Signature algorithm, e.g. ed25519, ecdsa-p256, rsa-pss-sha256."
+        },
+        "keyId": {
+          "type": "string",
+          "description": "Trust-store key identifier that must verify this signature."
+        },
+        "signatureDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$",
+          "description": "Digest of the detached signature blob stored beside the manifest."
+        }
+      }
+    },
+    "evalReportDigest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "Content-addressed digest of the eval report produced at training time; referenced by the AdapterPromotionDecision that promotes this adapter."
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "description": "Evidence URNs or content hashes for training provenance, contributing override events, and eval.",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

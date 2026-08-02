@@ -2,7 +2,7 @@ VENV ?= .venv
 PY ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-host-interfaces validate-workspace-ops clean
+.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-host-interfaces validate-workspace-ops validate-model-plane clean
 
 help:
 	@echo "Targets:"
@@ -13,6 +13,7 @@ help:
 	@echo "  make check-fog-node-host - runtime: check THIS host's fog-node conformance (fog node only)"
 	@echo "  make validate-host-interfaces - validate Agent Machine host-interface envelopes (good pass / bad fail)"
 	@echo "  make validate-workspace-ops - validate workspace-ops fixtures and conformance"
+	@echo "  make validate-model-plane - validate Model Plane conformance (receipt/unsigned-model/residency; good pass / bad fail)"
 	@echo "  make clean               - remove venv and caches"
 
 doctor:
@@ -52,6 +53,21 @@ validate:
 	@$(MAKE) --no-print-directory validate-host-interfaces PY=$(PY)
 	@echo "--- Validating seam registry (13 seams) ---"
 	$(PY) tools/validate_seam_registry.py
+	@echo "--- Validating Model Plane conformance (T7-19) ---"
+	@$(MAKE) --no-print-directory validate-model-plane PY=$(PY)
+
+validate-model-plane:
+	@echo "GOOD model-plane fixtures (must pass):"
+	$(PY) tools/validate_model_plane.py conformance/model-plane/good/*.json
+	@echo "BAD model-plane fixtures (must fail):"
+	@for f in conformance/model-plane/bad/*.json; do \
+		if $(PY) tools/validate_model_plane.py "$$f" >/dev/null 2>&1; then \
+			echo "ERR: expected failure but validated: $$f"; \
+			exit 1; \
+		else \
+			echo "OK: failed as expected: $$f"; \
+		fi; \
+	done
 
 validate-host-interfaces:
 	@echo "GOOD host-interface envelopes (must pass):"

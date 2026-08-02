@@ -1,0 +1,374 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.srcos.ai/v2/EscalationDecision.json",
+  "title": "EscalationDecision",
+  "description": "VENDORED from SourceOS-Linux/sourceos-spec (Tranche 7, canonical owner). Governed decision recorded whenever a request crosses (or is refused at) a tier / data-residency boundary in the Model Plane (Tranche 7). Escalation is a governed event, never a silent fallback (SEAM-015): a crossing is PERMITTED only when an authorizing capability lease is present AND the T0 sensitivity check passes for the target residency class; otherwise it is REFUSED. Fail-closed by construction \u2014 absence of a grant or an unanswered consent prompt resolves to refusal, not to a downgrade.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "type",
+    "specVersion",
+    "decidedAt",
+    "machineRef",
+    "task",
+    "fromTier",
+    "toTier",
+    "fromResidencyClass",
+    "toResidencyClass",
+    "trigger",
+    "sensitivityCheck",
+    "inputHash",
+    "verdict",
+    "ledgerSeq"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^urn:srcos:escalation-decision:",
+      "description": "Stable URN identifier. Pattern: urn:srcos:escalation-decision:<local-id>"
+    },
+    "type": {
+      "const": "EscalationDecision",
+      "description": "Discriminator constant \u2014 always \"EscalationDecision\"."
+    },
+    "specVersion": {
+      "type": "string",
+      "description": "Spec version of this document, e.g. \"2.1.0\"."
+    },
+    "decidedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the escalation decision was made."
+    },
+    "machineRef": {
+      "type": "string",
+      "pattern": "^urn:srcos:agent-machine:",
+      "description": "Agent Machine URN where the decision was made. The routing/sensitivity decision is made by the always-resident T0 tier; the router itself never escalates (Model Plane \u00a7II)."
+    },
+    "task": {
+      "type": "string",
+      "description": "Task label of the request being considered for escalation."
+    },
+    "fromTier": {
+      "type": "string",
+      "enum": [
+        "T0",
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "description": "Tier the request is escalating from."
+    },
+    "toTier": {
+      "type": "string",
+      "enum": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ],
+      "description": "Tier the request would escalate to."
+    },
+    "fromResidencyClass": {
+      "type": "string",
+      "enum": [
+        "on_device_only",
+        "sovereign_cluster",
+        "external_permitted"
+      ],
+      "description": "Data-residency class of the source tier."
+    },
+    "toResidencyClass": {
+      "type": "string",
+      "enum": [
+        "on_device_only",
+        "sovereign_cluster",
+        "external_permitted"
+      ],
+      "description": "Data-residency class of the target tier \u2014 the boundary being crossed."
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "low-confidence",
+        "user-request",
+        "downstream-validation-failure",
+        "capability-exceeds-tier"
+      ],
+      "description": "What triggered the escalation consideration (Model Plane \u00a7VII step 2)."
+    },
+    "sensitivityCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "performed",
+        "result"
+      ],
+      "description": "The T0 PII/sensitivity gate evaluated before any crossing. A crossing cannot be permitted unless this ran and passed (enforced below; SEAM-015).",
+      "properties": {
+        "performed": {
+          "type": "boolean",
+          "description": "Whether the T0 sensitivity check actually ran. A crossing where this is false must be refused."
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "not-run"
+          ],
+          "description": "Outcome of the sensitivity check for the target residency class."
+        },
+        "classifierDigest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^sha256:[a-fA-F0-9]{64}$",
+          "description": "Content-addressed digest of the T0 sensitivity classifier that produced this result, so the gate itself is auditable."
+        },
+        "sensitiveCategories": {
+          "type": "array",
+          "description": "Categories detected (e.g. pii, biometric, credential, health). A biometric detection forbids any crossing.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "capabilityLeaseRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^urn:srcos:lease:",
+      "description": "AgentCapabilityLease URN authorizing the crossing to the target residency class. Null when no grant exists \u2014 in which case the verdict must be refused (enforced below)."
+    },
+    "targetProviderRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^urn:srcos:inference-provider:",
+      "description": "InferenceProvider URN that would serve the escalated request (for on-device / sovereign-cluster targets)."
+    },
+    "targetExternalProviderRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^urn:srcos:external-model-provider-profile:",
+      "description": "ExternalModelProviderProfile URN for a T4 external-frontier target. Required when toTier is T4 (enforced below)."
+    },
+    "inputHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "Hash of the canonical input under consideration. Content is not recorded here."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "permitted",
+        "refused"
+      ],
+      "description": "Decision outcome. `permitted` requires a grant and a passing sensitivity check; anything else is `refused`."
+    },
+    "refusalReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "no-grant",
+        "sensitivity-fail",
+        "residency-forbidden",
+        "biometric-boundary",
+        "no-consent-surface",
+        "prompt-unanswered",
+        "provider-unavailable",
+        null
+      ],
+      "description": "Why the crossing was refused. Required when verdict is refused. `prompt-unanswered` is the fail-closed resolution for a non-interactive/background workload where an escalation consent prompt could not be answered."
+    },
+    "policyDecisionRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^urn:srcos:decision:",
+      "description": "PolicyDecision URN backing this escalation decision."
+    },
+    "ledgerSeq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Monotonic sequence number of this decision in the append-only ledger."
+    },
+    "ledgerPrevHash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "REVIEW HARDENING (ledger tamper-evidence): hash of the prior ledger entry, binding this decision into the hash-chain."
+    },
+    "evidenceHash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "Hash of the canonical decision evidence payload."
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "description": "Additional evidence URNs or content hashes.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "SEAM-015 TEETH: a crossing is PERMITTED only if an authorizing lease is present AND the sensitivity check ran and passed. \u2205 grant or a non-passing check cannot yield `permitted`.",
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "permitted"
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "required": [
+          "capabilityLeaseRef"
+        ],
+        "properties": {
+          "capabilityLeaseRef": {
+            "type": "string"
+          },
+          "sensitivityCheck": {
+            "properties": {
+              "performed": {
+                "const": true
+              },
+              "result": {
+                "const": "pass"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "A refusal must state why.",
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "refused"
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "required": [
+          "refusalReason"
+        ],
+        "properties": {
+          "refusalReason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "$comment": "A T4 external-frontier crossing must name the governed external provider profile it egresses through.",
+      "if": {
+        "properties": {
+          "toTier": {
+            "const": "T4"
+          },
+          "verdict": {
+            "const": "permitted"
+          }
+        },
+        "required": [
+          "toTier",
+          "verdict"
+        ]
+      },
+      "then": {
+        "required": [
+          "targetExternalProviderRef"
+        ],
+        "properties": {
+          "targetExternalProviderRef": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "$comment": "SEAM-015 BIOMETRIC HARD BOUNDARY: if the T0 sensitivity check flags a biometric category (face/speaker embeddings), no crossing is permitted under any grant \u2014 the verdict must be refused with refusalReason biometric-boundary. A permitted crossing carrying a biometric category is schema-invalid.",
+      "if": {
+        "properties": {
+          "sensitivityCheck": {
+            "properties": {
+              "sensitiveCategories": {
+                "contains": {
+                  "const": "biometric"
+                }
+              }
+            },
+            "required": [
+              "sensitiveCategories"
+            ]
+          }
+        },
+        "required": [
+          "sensitivityCheck"
+        ]
+      },
+      "then": {
+        "required": [
+          "refusalReason"
+        ],
+        "properties": {
+          "verdict": {
+            "const": "refused"
+          },
+          "refusalReason": {
+            "const": "biometric-boundary"
+          }
+        }
+      }
+    },
+    {
+      "$comment": "REVIEW HARDENING (ledger tamper-evidence): any non-genesis entry (ledgerSeq >= 1) must carry the prior entry's hash, so the append-only ledger is hash-chained.",
+      "if": {
+        "properties": {
+          "ledgerSeq": {
+            "minimum": 1
+          }
+        },
+        "required": [
+          "ledgerSeq"
+        ]
+      },
+      "then": {
+        "required": [
+          "ledgerPrevHash"
+        ],
+        "properties": {
+          "ledgerPrevHash": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

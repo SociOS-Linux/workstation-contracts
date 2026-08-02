@@ -1,0 +1,29 @@
+{
+  "id": "urn:srcos:model-adapter-manifest:summarization-v3",
+  "type": "ModelAdapterManifest",
+  "specVersion": "2.1.0",
+  "adapterDigest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+  "displayName": "summarization-v3",
+  "baseModelDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "baseModelManifestRef": "urn:srcos:model-manifest:generalist-3b-q4k",
+  "task": "summarization",
+  "rank": 16,
+  "alpha": 32,
+  "targetModules": [
+    "q_proj",
+    "v_proj",
+    "o_proj"
+  ],
+  "format": "safetensors",
+  "tokenizerDigest": null,
+  "license": "Apache-2.0",
+  "signature": {
+    "algorithm": "ed25519",
+    "keyId": "srcos-model-signing-2026",
+    "signatureDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "evalReportDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "evidenceRefs": [
+    "urn:srcos:adapter-promotion-decision:2026-06-10-summ-v3"
+  ]
+}

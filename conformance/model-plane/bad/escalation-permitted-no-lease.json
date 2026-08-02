@@ -1,0 +1,30 @@
+{
+  "id": "urn:srcos:escalation-decision:2026-06-09-4471",
+  "type": "EscalationDecision",
+  "specVersion": "2.1.0",
+  "decidedAt": "2026-06-09T21:59:58Z",
+  "machineRef": "urn:srcos:agent-machine:workstation-01",
+  "task": "agent_classification",
+  "fromTier": "T1",
+  "toTier": "T3",
+  "fromResidencyClass": "on_device_only",
+  "toResidencyClass": "sovereign_cluster",
+  "trigger": "low-confidence",
+  "sensitivityCheck": {
+    "performed": true,
+    "result": "pass",
+    "classifierDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "sensitiveCategories": []
+  },
+  "capabilityLeaseRef": null,
+  "targetProviderRef": "urn:srcos:inference-provider:sovereign-cluster-teacher-70b",
+  "targetExternalProviderRef": null,
+  "inputHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "verdict": "permitted",
+  "refusalReason": null,
+  "policyDecisionRef": "urn:srcos:decision:escalate-4471",
+  "ledgerSeq": 4471,
+  "ledgerPrevHash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "evidenceHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "evidenceRefs": []
+}
