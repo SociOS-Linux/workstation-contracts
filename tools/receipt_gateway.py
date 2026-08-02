@@ -165,18 +165,37 @@ def _ollama_forward(path: str, req_body: bytes, digest: str, headers: dict | Non
     return 200, "application/json", json.dumps(out).encode()
 
 
+def _passthrough(method: str, full_path: str, body: bytes | None, headers: dict | None
+                 ) -> tuple[int, str, bytes]:
+    """Transparently proxy an unhandled path to the backend (no receipt), preserving the
+    query string — so pointing OLLAMA_HOST/OPENAI_BASE_URL at the gateway doesn't break
+    non-inference endpoints (e.g. Ollama /api/tags, /api/show; OpenAI /v1/models)."""
+    fwd = {k: v for k, v in (headers or {}).items() if k.lower() in _FORWARD_HEADERS}
+    r = urllib.request.Request(f"{BACKEND}{full_path}", data=body, headers=fwd, method=method)
+    try:
+        with urllib.request.urlopen(r, timeout=300) as resp:
+            return resp.status, resp.headers.get("Content-Type", "application/json"), resp.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers.get("Content-Type", "application/json"), e.read()
+
+
 def _handler(digest: str):
     class H(BaseHTTPRequestHandler):
+        def _respond(self, status: int, ctype: str, raw: bytes) -> None:
+            self.send_response(status)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
         def do_GET(self):
             if urlsplit(self.path).path.rstrip("/") in ("/health", "/healthz"):
-                payload = b'{"status":"ok"}'
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(payload)))
-                self.end_headers()
-                self.wfile.write(payload)
-            else:
-                self.send_error(404)
+                return self._respond(200, "application/json", b'{"status":"ok"}')
+            try:  # everything else: transparent passthrough
+                status, ctype, raw = _passthrough("GET", self.path, None, dict(self.headers))
+            except urllib.error.URLError as exc:
+                self.send_error(502, f"backend unreachable: {exc}"); return
+            self._respond(status, ctype, raw)
 
         def do_POST(self):
             path = urlsplit(self.path).path.rstrip("/")  # ignore any query string for routing
@@ -187,15 +206,11 @@ def _handler(digest: str):
                     status, ctype, raw = forward_and_receipt(path, body, digest, dict(self.headers))
                 elif path in _OLLAMA:
                     status, ctype, raw = _ollama_forward(path, body, digest, dict(self.headers))
-                else:
-                    self.send_error(404); return
+                else:  # unhandled: transparent passthrough (no receipt)
+                    status, ctype, raw = _passthrough("POST", self.path, body, dict(self.headers))
             except urllib.error.URLError as exc:  # backend unreachable
                 self.send_error(502, f"backend unreachable: {exc}"); return
-            self.send_response(status)
-            self.send_header("Content-Type", ctype)
-            self.send_header("Content-Length", str(len(raw)))
-            self.end_headers()
-            self.wfile.write(raw)
+            self._respond(status, ctype, raw)
 
         def log_message(self, *a):
             pass
