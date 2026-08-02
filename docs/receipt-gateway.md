@@ -12,6 +12,15 @@ the real returned vectors). This covers the estate's two real inference shapes �
 the ingestion/RAG embedding path (`prophet-platform/apps/embeddings`, the sovereign
 `/v1/embeddings` service).
 
+## Ollama-native services (e.g. noetica)
+Not everything speaks OpenAI `/v1`. noetica points `OLLAMA_HOST` at an Ollama API. The
+gateway also accepts the **Ollama-native** endpoints `/api/chat`, `/api/generate`,
+`/api/embeddings`, `/api/embed`: it translates the request to the OpenAI backend, emits the
+same receipt, and translates the response back to Ollama shape — so pointing noetica's
+`OLLAMA_HOST` at the gateway gives it receipts with no code change. Non-streaming (`stream`
+is forced false to the backend). Proven live: `/api/chat` → Ollama `{message,done,…}` and
+`/api/embeddings` → Ollama `{embedding:[768]}`, each emitting a real receipt.
+
 Residency: the receipt is `on_device_only` — appropriate for a **local** backend, which is
 what this reference proves. An off-device/enterprise backend requires the escalation-grant
 path (lease + escalation chain) and is out of scope for this gateway.
