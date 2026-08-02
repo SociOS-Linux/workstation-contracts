@@ -165,18 +165,55 @@ def _ollama_forward(path: str, req_body: bytes, digest: str, headers: dict | Non
     return 200, "application/json", json.dumps(out).encode()
 
 
+# hop-by-hop / length headers we must not copy verbatim from the upstream response
+_HOP = {"connection", "keep-alive", "transfer-encoding", "content-length",
+        "content-encoding", "te", "trailers", "upgrade"}
+
+
+def _passthrough(method: str, full_path: str, body: bytes | None, headers: dict | None
+                 ) -> tuple[int, dict, bytes]:
+    """Transparently proxy an unhandled path to the backend (no receipt), preserving the
+    path+query and forwarding upstream response headers — so pointing OLLAMA_HOST/
+    OPENAI_BASE_URL at the gateway doesn't break or alter non-inference endpoints
+    (e.g. Ollama /api/tags, /api/show; OpenAI /v1/models)."""
+    sp = urlsplit(full_path)  # normalize (handles absolute-form request targets)
+    upstream = sp.path + (f"?{sp.query}" if sp.query else "")
+    fwd = {k: v for k, v in (headers or {}).items() if k.lower() in _FORWARD_HEADERS}
+    r = urllib.request.Request(f"{BACKEND}{upstream}", data=body, headers=fwd, method=method)
+    try:
+        with urllib.request.urlopen(r, timeout=300) as resp:
+            hdrs = {k: v for k, v in resp.headers.items() if k.lower() not in _HOP}
+            return resp.status, hdrs, resp.read()
+    except urllib.error.HTTPError as e:
+        hdrs = {k: v for k, v in e.headers.items() if k.lower() not in _HOP}
+        return e.code, hdrs, e.read()
+
+
 def _handler(digest: str):
     class H(BaseHTTPRequestHandler):
+        def _respond(self, status: int, ctype: str, raw: bytes) -> None:
+            self.send_response(status)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
+        def _respond_full(self, status: int, hdrs: dict, raw: bytes) -> None:
+            self.send_response(status)
+            for k, v in hdrs.items():
+                self.send_header(k, v)
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
         def do_GET(self):
             if urlsplit(self.path).path.rstrip("/") in ("/health", "/healthz"):
-                payload = b'{"status":"ok"}'
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(payload)))
-                self.end_headers()
-                self.wfile.write(payload)
-            else:
-                self.send_error(404)
+                return self._respond(200, "application/json", b'{"status":"ok"}')
+            try:  # everything else: transparent passthrough (upstream headers preserved)
+                status, hdrs, raw = _passthrough("GET", self.path, None, dict(self.headers))
+            except urllib.error.URLError as exc:
+                self.send_error(502, f"backend unreachable: {exc}"); return
+            self._respond_full(status, hdrs, raw)
 
         def do_POST(self):
             path = urlsplit(self.path).path.rstrip("/")  # ignore any query string for routing
@@ -185,17 +222,15 @@ def _handler(digest: str):
             try:
                 if path in _SUPPORTED:
                     status, ctype, raw = forward_and_receipt(path, body, digest, dict(self.headers))
+                    self._respond(status, ctype, raw)
                 elif path in _OLLAMA:
                     status, ctype, raw = _ollama_forward(path, body, digest, dict(self.headers))
-                else:
-                    self.send_error(404); return
+                    self._respond(status, ctype, raw)
+                else:  # unhandled: transparent passthrough (no receipt, upstream headers preserved)
+                    status, hdrs, raw = _passthrough("POST", self.path, body, dict(self.headers))
+                    self._respond_full(status, hdrs, raw)
             except urllib.error.URLError as exc:  # backend unreachable
-                self.send_error(502, f"backend unreachable: {exc}"); return
-            self.send_response(status)
-            self.send_header("Content-Type", ctype)
-            self.send_header("Content-Length", str(len(raw)))
-            self.end_headers()
-            self.wfile.write(raw)
+                self.send_error(502, f"backend unreachable: {exc}")
 
         def log_message(self, *a):
             pass
