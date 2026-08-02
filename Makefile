@@ -59,13 +59,17 @@ validate:
 validate-model-plane:
 	@echo "GOOD model-plane fixtures (must pass):"
 	$(PY) tools/validate_model_plane.py conformance/model-plane/good/*.json
-	@echo "BAD model-plane fixtures (must fail):"
+	@echo "BAD model-plane fixtures (must fail as a CONFORMANCE rejection, exit 1):"
 	@for f in conformance/model-plane/bad/*.json; do \
-		if $(PY) tools/validate_model_plane.py "$$f" >/dev/null 2>&1; then \
-			echo "ERR: expected failure but validated: $$f"; \
+		$(PY) tools/validate_model_plane.py "$$f" >/dev/null 2>&1; rc=$$?; \
+		if [ $$rc -eq 1 ]; then \
+			echo "OK: rejected as expected: $$f"; \
+		elif [ $$rc -eq 0 ]; then \
+			echo "ERR: expected conformance failure but validated: $$f"; \
 			exit 1; \
 		else \
-			echo "OK: failed as expected: $$f"; \
+			echo "ERR: usage/infra error (exit $$rc), not a conformance rejection: $$f"; \
+			exit 1; \
 		fi; \
 	done
 

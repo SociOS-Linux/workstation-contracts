@@ -53,46 +53,59 @@ def _validators() -> dict:
     return out
 
 
-def validate_file(path: str, validators: dict) -> bool:
+# Per-fixture result codes, mirrored by the process exit code:
+#   0 = conforms
+#   1 = CONFORMANCE failure (a real schema rejection — the teeth firing)
+#   2 = USAGE/infra error (unreadable file, malformed JSON, unknown `type`)
+# The distinction matters: a "bad" fixture must fail as a conformance rejection
+# (1), never as a broken-harness error (2), or the bad/good loops would report a
+# broken fixture as "failed as expected" and mask it.
+OK, CONFORMANCE_FAIL, USAGE_ERROR = 0, 1, 2
+
+
+def validate_file(path: str, validators: dict) -> int:
     p = Path(path)
     try:
         doc = json.loads(p.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        print(f"FAIL model-plane.parse: {path}: {exc}", file=sys.stderr)
-        return False
+        print(f"ERR model-plane.parse: {path}: {exc}", file=sys.stderr)
+        return USAGE_ERROR
 
     kind = doc.get("type")
     validator = validators.get(kind)
     if validator is None:
         print(
-            f"FAIL model-plane.type: {path}: unknown or missing `type` "
+            f"ERR model-plane.type: {path}: unknown or missing `type` "
             f"(got {kind!r}; expected one of {sorted(SCHEMAS)})",
             file=sys.stderr,
         )
-        return False
+        return USAGE_ERROR
 
     errs = sorted(validator.iter_errors(doc), key=lambda e: list(e.path))
     if errs:
         e = errs[0]
         loc = "/".join(str(x) for x in e.path) or "<root>"
         print(f"FAIL model-plane.{kind}: {path}: {loc}: {e.message}", file=sys.stderr)
-        return False
-    return True
+        return CONFORMANCE_FAIL
+    return OK
 
 
 def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print("usage: validate_model_plane.py <fixture.json> [<fixture.json> ...]", file=sys.stderr)
-        return 2
-    validators = _validators()
-    ok = True
+        return USAGE_ERROR
+    try:
+        validators = _validators()
+    except (OSError, json.JSONDecodeError, jsonschema.exceptions.SchemaError) as exc:
+        print(f"ERR model-plane.schema-load: {exc}", file=sys.stderr)
+        return USAGE_ERROR
+    # Worst wins: USAGE_ERROR (2) > CONFORMANCE_FAIL (1) > OK (0).
+    worst = OK
     for path in argv[1:]:
-        if not validate_file(path, validators):
-            ok = False
-    if ok:
+        worst = max(worst, validate_file(path, validators))
+    if worst == OK:
         print(f"OK: model-plane — {len(argv) - 1} fixture(s) conform")
-        return 0
-    return 1
+    return worst
 
 
 if __name__ == "__main__":
