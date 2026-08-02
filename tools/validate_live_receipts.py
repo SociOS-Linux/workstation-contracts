@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Validate the committed LIVE inference-receipt ledger (real completions).
+"""Validate every committed LIVE inference-receipt ledger (real completions).
 
-The ledger evidence/model-plane/live-inference-ledger.jsonl holds REAL InferenceReceipts
-emitted by tools/inferenced_shim.py from real llama.cpp completions against a real
-Apache-2.0 model. This runs in CI (the model isn't needed to validate — only the receipts):
-every receipt schema-conforms to the vendored InferenceReceipt schema and the hash-chain
-is unbroken. This is the L3 proof: the estate has real receipts, and they check out.
+Validates each evidence/model-plane/*-ledger.jsonl — REAL InferenceReceipts emitted by
+tools/inferenced_shim.py (CLI path) and tools/receipt_gateway.py (OpenAI-compatible proxy
+path) from real llama.cpp completions against a real Apache-2.0 model. Runs in CI (no model
+needed, only the receipts): every receipt schema-conforms to the vendored InferenceReceipt
+schema and each ledger's hash-chain is unbroken. The L3 proof: the estate has real receipts.
 
 exit 0 ok; 1 = conformance/chain failure; 2 = usage error.
 """
@@ -33,9 +33,10 @@ LEDGER_DIR = ROOT / "evidence" / "model-plane"
 
 def main() -> int:
     # Every committed real-receipt ledger under evidence/model-plane/ (shim + gateway + …).
-    ledgers = sorted(LEDGER_DIR.glob("*.jsonl"))
+    # Match the *-ledger.jsonl convention so unrelated JSONL evidence doesn't get validated.
+    ledgers = sorted(LEDGER_DIR.glob("*-ledger.jsonl"))
     if not ledgers:
-        print(f"ERR: no receipt ledgers under {LEDGER_DIR}", file=sys.stderr)
+        print(f"ERR: no *-ledger.jsonl receipt ledgers under {LEDGER_DIR}", file=sys.stderr)
         return 2
     try:
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))

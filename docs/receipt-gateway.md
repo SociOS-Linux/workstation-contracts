@@ -1,11 +1,16 @@
 # Receipt-emitting inference gateway — how the whole estate gets receipts
 
 `tools/receipt_gateway.py` is the primitive that makes **every** estate inference emit a
-receipt without touching each service: a drop-in proxy in front of any OpenAI-compatible
-provider (llama-server, vLLM, ollama, an enterprise endpoint). Point a service's
-`OPENAI_BASE_URL` at the gateway and every `/v1/chat/completions` it makes is forwarded to
-the real backend **and** recorded as a schema-conformant, hash-chained `InferenceReceipt`
-(real model digest, real input/output hashes, real token counts).
+receipt without touching each service: a drop-in transparent proxy in front of an
+OpenAI-compatible provider (llama-server, vLLM, ollama). It forwards `/v1/chat/completions`
+to the real backend (preserving client headers like `Authorization`) and, on a successful
+non-streaming JSON response, records a schema-conformant, hash-chained `InferenceReceipt`
+with the real model digest, real input/output hashes, and the backend's **real usage token
+counts** (`usage.prompt_tokens`/`completion_tokens`).
+
+Residency: the receipt is `on_device_only` — appropriate for a **local** backend, which is
+what this reference proves. An off-device/enterprise backend requires the escalation-grant
+path (lease + escalation chain) and is out of scope for this gateway.
 
 ## Proven live
 The gateway was run against a real `llama-server` (Qwen2.5-0.5B-Instruct, Apache-2.0):
