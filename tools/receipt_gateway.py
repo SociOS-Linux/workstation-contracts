@@ -63,8 +63,10 @@ def _messages_text(req: dict) -> str:
 
 
 def _embed_input_text(req: dict) -> str:
+    # /v1/embeddings input may be a string, list[str], or token-ID arrays (list[int] /
+    # list[list[int]]); stringify items so hashing never crashes on non-strings.
     inp = req.get("input", "")
-    return "\n".join(inp) if isinstance(inp, list) else str(inp)
+    return "\n".join(str(x) for x in inp) if isinstance(inp, list) else str(inp)
 
 
 def _maybe_emit(path: str, req_body: bytes, resp_bytes: bytes, content_type: str, digest: str) -> None:

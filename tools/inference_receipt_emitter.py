@@ -37,6 +37,8 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "schemas" / "model-plane" / "InferenceReceipt.schema.json"
 
+_UNSET = object()  # distinguishes "estimate it" from an explicit None (record null)
+
 
 def sha256(s: str) -> str:
     return "sha256:" + hashlib.sha256(s.encode("utf-8")).hexdigest()
@@ -56,8 +58,7 @@ def _last_entry(f) -> dict | None:
 def emit_receipt(ledger: Path, *, base_model_digest: str, task: str, input_text: str,
                  output_text: str, provider_daemon: str = "inferenced", tier: str = "T1",
                  tokenizer_digest: str | None = None, compute_device: str = "cpu",
-                 input_token_count: int | None = None,
-                 output_token_count: int | None = None) -> dict:
+                 input_token_count=_UNSET, output_token_count=_UNSET) -> dict:
     """Append one on-device InferenceReceipt to the hash-chained ledger, return it.
 
     Read-tail + append happen under an exclusive advisory lock so concurrent emitters
@@ -81,10 +82,11 @@ def emit_receipt(ledger: Path, *, base_model_digest: str, task: str, input_text:
                 "tokenizerDigest": tokenizer_digest,
                 "task": task,
                 "inputHash": sha256(input_text),
-                # real provider token counts when supplied; else a whitespace estimate
-                "inputTokenCount": input_token_count if input_token_count is not None else len(input_text.split()),
+                # real provider token counts when supplied; explicit None -> null (e.g.
+                # embeddings have no output tokens); _UNSET -> a whitespace estimate.
+                "inputTokenCount": len(input_text.split()) if input_token_count is _UNSET else input_token_count,
                 "outputHash": sha256(output_text),
-                "outputTokenCount": output_token_count if output_token_count is not None else len(output_text.split()),
+                "outputTokenCount": len(output_text.split()) if output_token_count is _UNSET else output_token_count,
                 "dataResidencyClass": "on_device_only",
                 "escalatedFrom": None,
                 "escalationChain": [],
