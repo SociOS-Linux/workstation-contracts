@@ -20,6 +20,7 @@ exit 0 ok; 1 = conformance failure; 2 = usage/infra error.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -40,8 +41,10 @@ LEDGER = Path(os.environ.get("RECEIPT_GATEWAY_LEDGER",
 _FORWARD_HEADERS = ("authorization", "content-type", "openai-organization", "openai-project")
 
 
+@functools.lru_cache(maxsize=1)
 def _single_digest() -> str | None:
-    """The single-model digest (env or hashed weights path), or None if unset."""
+    """The single-model digest (env or hashed weights path), or None. Cached: the weights
+    path is hashed at most once, not per request."""
     d = os.environ.get("RECEIPT_GATEWAY_MODEL_DIGEST")
     if d:
         return d
@@ -63,18 +66,22 @@ def model_digest() -> str:
 
 
 # Per-request model -> digest map for multi-model backends (e.g. ollama serving several
-# models). {"qwen2.5:7b": "sha256:...", ...}. Falls back to the single-model digest.
+# models): {"qwen2.5:7b": "sha256:...", ...}. Kept only if it decodes to a str->str object.
 try:
-    _DIGEST_MAP: dict = json.loads(os.environ.get("RECEIPT_GATEWAY_MODEL_DIGESTS", "{}"))
+    _raw_map = json.loads(os.environ.get("RECEIPT_GATEWAY_MODEL_DIGESTS", "{}"))
+    _DIGEST_MAP: dict = ({k: v for k, v in _raw_map.items() if isinstance(v, str)}
+                         if isinstance(_raw_map, dict) else {})
 except (json.JSONDecodeError, ValueError):
     _DIGEST_MAP = {}
 
 
 def _resolve_digest(model: str | None) -> str | None:
     """Digest for the request's model; None means 'unknown' — forward but emit no receipt
-    (never fabricate a content digest)."""
-    if model and model in _DIGEST_MAP:
-        return _DIGEST_MAP[model]
+    (never fabricate a content digest, never stamp the wrong model). When a map is
+    configured it is AUTHORITATIVE (a named-but-unmapped model → None); with no map the
+    single-model digest applies to every request (single-model gateway)."""
+    if _DIGEST_MAP:
+        return _DIGEST_MAP.get(model)
     return _single_digest()
 
 
