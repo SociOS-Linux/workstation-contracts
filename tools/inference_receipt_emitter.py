@@ -55,7 +55,9 @@ def _last_entry(f) -> dict | None:
 
 def emit_receipt(ledger: Path, *, base_model_digest: str, task: str, input_text: str,
                  output_text: str, provider_daemon: str = "inferenced", tier: str = "T1",
-                 tokenizer_digest: str | None = None, compute_device: str = "cpu") -> dict:
+                 tokenizer_digest: str | None = None, compute_device: str = "cpu",
+                 input_token_count: int | None = None,
+                 output_token_count: int | None = None) -> dict:
     """Append one on-device InferenceReceipt to the hash-chained ledger, return it.
 
     Read-tail + append happen under an exclusive advisory lock so concurrent emitters
@@ -79,9 +81,10 @@ def emit_receipt(ledger: Path, *, base_model_digest: str, task: str, input_text:
                 "tokenizerDigest": tokenizer_digest,
                 "task": task,
                 "inputHash": sha256(input_text),
-                "inputTokenCount": len(input_text.split()),
+                # real provider token counts when supplied; else a whitespace estimate
+                "inputTokenCount": input_token_count if input_token_count is not None else len(input_text.split()),
                 "outputHash": sha256(output_text),
-                "outputTokenCount": len(output_text.split()),
+                "outputTokenCount": output_token_count if output_token_count is not None else len(output_text.split()),
                 "dataResidencyClass": "on_device_only",
                 "escalatedFrom": None,
                 "escalationChain": [],
