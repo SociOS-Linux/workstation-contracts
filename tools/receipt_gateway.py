@@ -28,6 +28,7 @@ import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from inference_receipt_emitter import canonical, emit_receipt  # noqa: E402
@@ -134,11 +135,13 @@ def _ollama_forward(path: str, req_body: bytes, digest: str, headers: dict | Non
         num = (req.get("options") or {}).get("num_predict")
         if num:
             oai["max_tokens"] = num
-        status, ctype, raw = forward_and_receipt("/v1/chat/completions", json.dumps(oai).encode(),
-                                                 digest, headers)
+        status, ctype, raw = forward_and_receipt(_CHAT, json.dumps(oai).encode(), digest, headers)
         if not (200 <= status < 300) or "application/json" not in ctype.lower():
             return status, ctype, raw  # pass backend error through
-        body = json.loads(raw)
+        try:
+            body = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            return status, ctype, raw  # backend mislabeled/invalid JSON — pass through, don't crash
         content = ((body.get("choices") or [{}])[0].get("message") or {}).get("content", "")
         usage = body.get("usage") or {}
         out = ({"model": model, "message": {"role": "assistant", "content": content}, "done": True}
@@ -148,11 +151,15 @@ def _ollama_forward(path: str, req_body: bytes, digest: str, headers: dict | Non
         return 200, "application/json", json.dumps(out).encode()
     # /api/embeddings (legacy single) or /api/embed (multi)
     inp = req.get("input", req.get("prompt", ""))
-    status, ctype, raw = forward_and_receipt("/v1/embeddings", json.dumps({"input": inp}).encode(),
+    status, ctype, raw = forward_and_receipt(_EMBED, json.dumps({"input": inp}).encode(),
                                              digest, headers)
     if not (200 <= status < 300) or "application/json" not in ctype.lower():
         return status, ctype, raw
-    vectors = [d.get("embedding") for d in (json.loads(raw).get("data") or [])]
+    try:
+        data = json.loads(raw).get("data") or []
+    except (json.JSONDecodeError, ValueError):
+        return status, ctype, raw  # backend mislabeled/invalid JSON — pass through
+    vectors = [d.get("embedding") for d in data]
     out = ({"embedding": vectors[0] if vectors else []} if path == "/api/embeddings"
            else {"model": model, "embeddings": vectors})
     return 200, "application/json", json.dumps(out).encode()
@@ -161,7 +168,7 @@ def _ollama_forward(path: str, req_body: bytes, digest: str, headers: dict | Non
 def _handler(digest: str):
     class H(BaseHTTPRequestHandler):
         def do_POST(self):
-            path = self.path.rstrip("/")
+            path = urlsplit(self.path).path.rstrip("/")  # ignore any query string for routing
             n = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(n)
             try:
