@@ -57,3 +57,24 @@ single receipt-emitting gateway in the request path gives **every** routed servi
 inference is on the ledger. The gateway + the CLI shim (`inferenced_shim.py`) are the two
 reference emitters; wiring each real service to route through the gateway is the remaining
 rollout.
+
+## Deploy (container + persistent ledger)
+The gateway ships as a container so the estate can run it as a service with a **durable
+ledger** (SEAM-011 non-local ledger = a mounted volume, not a CI snapshot):
+
+```
+podman build -f deploy/receipt-gateway/Dockerfile -t receipt-gateway .
+# or: cd deploy/receipt-gateway && docker compose up -d   (set RECEIPT_GATEWAY_MODEL_DIGEST)
+```
+`deploy/receipt-gateway/compose.yml` runs it with a `receipt-ledger` volume, a `/health`
+check, and `RECEIPT_GATEWAY_BACKEND` pointing at the real provider. Proven live: built the
+image, ran the container against a real `llama-server`, sent a real `/v1/chat/completions`
+through it, and the receipt landed in the mounted volume (`/var/lib/receipt-gateway/ledger.jsonl`).
+
+### Wiring a service (the rollout)
+Point the service at the gateway — no code change:
+- OpenAI-compatible service: `OPENAI_BASE_URL=http://receipt-gateway:8898/v1`
+- Ollama-native service (e.g. noetica): `OLLAMA_HOST=http://receipt-gateway:8898`
+
+and set `RECEIPT_GATEWAY_BACKEND` to the provider the gateway fronts. Every routed call is
+then on the ledger.

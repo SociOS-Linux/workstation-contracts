@@ -1,0 +1,29 @@
+# Receipt-emitting inference gateway — deploy unit.
+# The estate points a service's OPENAI_BASE_URL / OLLAMA_HOST at this gateway; it forwards
+# to the real provider (RECEIPT_GATEWAY_BACKEND) and records a receipt per call to the
+# persistent `receipt-ledger` volume.
+services:
+  receipt-gateway:
+    build:
+      context: ../..
+      dockerfile: deploy/receipt-gateway/Dockerfile
+    image: receipt-gateway:latest
+    environment:
+      # the real provider this gateway fronts (e.g. an ollama or vLLM service)
+      RECEIPT_GATEWAY_BACKEND: ${RECEIPT_GATEWAY_BACKEND:-http://ollama:11434}
+      # digest of the deployed model's weights (required)
+      RECEIPT_GATEWAY_MODEL_DIGEST: ${RECEIPT_GATEWAY_MODEL_DIGEST:?set the deployed model digest}
+      RECEIPT_GATEWAY_PORT: "8898"
+    ports:
+      - "8898:8898"
+    volumes:
+      - receipt-ledger:/var/lib/receipt-gateway   # persistent receipt ledger
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8898/health',timeout=2).status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  receipt-ledger:
