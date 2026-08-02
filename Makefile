@@ -2,7 +2,7 @@ VENV ?= .venv
 PY ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-host-interfaces validate-workspace-ops validate-model-plane clean
+.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-host-interfaces validate-workspace-ops validate-model-plane validate-inference-emitter clean
 
 help:
 	@echo "Targets:"
@@ -14,6 +14,7 @@ help:
 	@echo "  make validate-host-interfaces - validate Agent Machine host-interface envelopes (good pass / bad fail)"
 	@echo "  make validate-workspace-ops - validate workspace-ops fixtures and conformance"
 	@echo "  make validate-model-plane - validate Model Plane conformance (receipt/unsigned-model/residency; good pass / bad fail)"
+	@echo "  make validate-inference-emitter - self-test the InferenceReceipt emitter + hash-chained ledger"
 	@echo "  make clean               - remove venv and caches"
 
 doctor:
@@ -55,6 +56,11 @@ validate:
 	$(PY) tools/validate_seam_registry.py
 	@echo "--- Validating Model Plane conformance (T7-19) ---"
 	@$(MAKE) --no-print-directory validate-model-plane PY=$(PY)
+	@echo "--- Validating InferenceReceipt emitter (hash-chained ledger self-test) ---"
+	$(PY) tools/inference_receipt_emitter.py --selftest
+
+validate-inference-emitter:
+	$(PY) tools/inference_receipt_emitter.py --selftest
 
 validate-model-plane:
 	@echo "GOOD model-plane fixtures (must pass):"
