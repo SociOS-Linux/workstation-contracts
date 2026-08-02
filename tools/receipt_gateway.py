@@ -115,16 +115,62 @@ def forward_and_receipt(path: str, req_body: bytes, digest: str, headers: dict |
     return status, ctype, raw
 
 
+# Ollama-native endpoints (e.g. noetica's OLLAMA_HOST) — translated to the OpenAI backend
+# so they get receipts too. Non-streaming (stream is forced false to the backend).
+_OLLAMA = ("/api/chat", "/api/generate", "/api/embeddings", "/api/embed")
+
+
+def _ollama_forward(path: str, req_body: bytes, digest: str, headers: dict | None
+                    ) -> tuple[int, str, bytes]:
+    try:
+        req = json.loads(req_body)
+    except (json.JSONDecodeError, ValueError):
+        return 400, "application/json", b'{"error":"invalid JSON"}'
+    model = req.get("model", "")
+    if path in ("/api/chat", "/api/generate"):
+        msgs = (req.get("messages") if path == "/api/chat"
+                else [{"role": "user", "content": req.get("prompt", "")}]) or []
+        oai = {"messages": msgs, "stream": False}
+        num = (req.get("options") or {}).get("num_predict")
+        if num:
+            oai["max_tokens"] = num
+        status, ctype, raw = forward_and_receipt("/v1/chat/completions", json.dumps(oai).encode(),
+                                                 digest, headers)
+        if not (200 <= status < 300) or "application/json" not in ctype.lower():
+            return status, ctype, raw  # pass backend error through
+        body = json.loads(raw)
+        content = ((body.get("choices") or [{}])[0].get("message") or {}).get("content", "")
+        usage = body.get("usage") or {}
+        out = ({"model": model, "message": {"role": "assistant", "content": content}, "done": True}
+               if path == "/api/chat"
+               else {"model": model, "response": content, "done": True})
+        out["prompt_eval_count"], out["eval_count"] = usage.get("prompt_tokens"), usage.get("completion_tokens")
+        return 200, "application/json", json.dumps(out).encode()
+    # /api/embeddings (legacy single) or /api/embed (multi)
+    inp = req.get("input", req.get("prompt", ""))
+    status, ctype, raw = forward_and_receipt("/v1/embeddings", json.dumps({"input": inp}).encode(),
+                                             digest, headers)
+    if not (200 <= status < 300) or "application/json" not in ctype.lower():
+        return status, ctype, raw
+    vectors = [d.get("embedding") for d in (json.loads(raw).get("data") or [])]
+    out = ({"embedding": vectors[0] if vectors else []} if path == "/api/embeddings"
+           else {"model": model, "embeddings": vectors})
+    return 200, "application/json", json.dumps(out).encode()
+
+
 def _handler(digest: str):
     class H(BaseHTTPRequestHandler):
         def do_POST(self):
             path = self.path.rstrip("/")
-            if path not in _SUPPORTED:
-                self.send_error(404); return
             n = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(n)
             try:
-                status, ctype, raw = forward_and_receipt(
-                    path, self.rfile.read(n), digest, dict(self.headers))
+                if path in _SUPPORTED:
+                    status, ctype, raw = forward_and_receipt(path, body, digest, dict(self.headers))
+                elif path in _OLLAMA:
+                    status, ctype, raw = _ollama_forward(path, body, digest, dict(self.headers))
+                else:
+                    self.send_error(404); return
             except urllib.error.URLError as exc:  # backend unreachable
                 self.send_error(502, f"backend unreachable: {exc}"); return
             self.send_response(status)
