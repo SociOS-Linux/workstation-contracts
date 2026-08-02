@@ -20,6 +20,7 @@ exit 0 ok; 1 = conformance failure; 2 = usage/infra error.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -40,7 +41,10 @@ LEDGER = Path(os.environ.get("RECEIPT_GATEWAY_LEDGER",
 _FORWARD_HEADERS = ("authorization", "content-type", "openai-organization", "openai-project")
 
 
-def model_digest() -> str:
+@functools.lru_cache(maxsize=1)
+def _single_digest() -> str | None:
+    """The single-model digest (env or hashed weights path), or None. Cached: the weights
+    path is hashed at most once, not per request."""
     d = os.environ.get("RECEIPT_GATEWAY_MODEL_DIGEST")
     if d:
         return d
@@ -51,7 +55,41 @@ def model_digest() -> str:
             for chunk in iter(lambda: f.read(1 << 20), b""):
                 h.update(chunk)
         return "sha256:" + h.hexdigest()
-    raise RuntimeError("set RECEIPT_GATEWAY_MODEL_DIGEST or RECEIPT_GATEWAY_MODEL_PATH")
+    return None
+
+
+def model_digest() -> str:
+    d = _single_digest()
+    if not d:
+        raise RuntimeError("set RECEIPT_GATEWAY_MODEL_DIGEST or RECEIPT_GATEWAY_MODEL_PATH")
+    return d
+
+
+# Per-request model -> digest map for multi-model backends (e.g. ollama serving several
+# models): {"qwen2.5:7b": "sha256:...", ...}. Kept only if it decodes to a str->str object.
+try:
+    _raw_map = json.loads(os.environ.get("RECEIPT_GATEWAY_MODEL_DIGESTS", "{}"))
+    _DIGEST_MAP: dict = ({k: v for k, v in _raw_map.items() if isinstance(v, str)}
+                         if isinstance(_raw_map, dict) else {})
+except (json.JSONDecodeError, ValueError):
+    _DIGEST_MAP = {}
+
+
+def _resolve_digest(model: str | None) -> str | None:
+    """Digest for the request's model; None means 'unknown' — forward but emit no receipt
+    (never fabricate a content digest, never stamp the wrong model). When a map is
+    configured it is AUTHORITATIVE (a named-but-unmapped model → None); with no map the
+    single-model digest applies to every request (single-model gateway)."""
+    if _DIGEST_MAP:
+        return _DIGEST_MAP.get(model)
+    return _single_digest()
+
+
+def _req_model(body: bytes) -> str | None:
+    try:
+        return json.loads(body).get("model")
+    except (json.JSONDecodeError, ValueError, AttributeError):
+        return None
 
 
 _CHAT = "/v1/chat/completions"
@@ -70,8 +108,11 @@ def _embed_input_text(req: dict) -> str:
     return "\n".join(str(x) for x in inp) if isinstance(inp, list) else str(inp)
 
 
-def _maybe_emit(path: str, req_body: bytes, resp_bytes: bytes, content_type: str, digest: str) -> None:
+def _maybe_emit(path: str, req_body: bytes, resp_bytes: bytes, content_type: str,
+                digest: str | None) -> None:
     """Emit the right receipt for a real, non-streaming JSON response."""
+    if digest is None:
+        return  # unknown model digest — forward the call, but don't fabricate a receipt
     if "application/json" not in content_type.lower():
         return  # streaming (SSE) or non-JSON error body — pass through, no receipt
     try:
@@ -189,7 +230,7 @@ def _passthrough(method: str, full_path: str, body: bytes | None, headers: dict 
         return e.code, hdrs, e.read()
 
 
-def _handler(digest: str):
+def _handler():
     class H(BaseHTTPRequestHandler):
         def _respond(self, status: int, ctype: str, raw: bytes) -> None:
             self.send_response(status)
@@ -219,6 +260,7 @@ def _handler(digest: str):
             path = urlsplit(self.path).path.rstrip("/")  # ignore any query string for routing
             n = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(n)
+            digest = _resolve_digest(_req_model(body))  # per-request; None -> forward, no receipt
             try:
                 if path in _SUPPORTED:
                     status, ctype, raw = forward_and_receipt(path, body, digest, dict(self.headers))
@@ -267,14 +309,14 @@ def main(argv: list[str]) -> int:
     if "--selftest" in argv:
         return _selftest()
     if "--serve" in argv:
-        try:
-            digest = model_digest()
-        except RuntimeError as exc:
-            print(f"ERR: {exc}", file=sys.stderr); return 2
+        if not _DIGEST_MAP and not _single_digest():
+            print("WARN: no RECEIPT_GATEWAY_MODEL_DIGEST(S) set — requests are forwarded but "
+                  "no receipts are emitted (a receipt needs the model's real digest)", file=sys.stderr)
         host = os.environ.get("RECEIPT_GATEWAY_HOST", "127.0.0.1")
         port = int(os.environ.get("RECEIPT_GATEWAY_PORT", "8898"))
-        print(f"receipt-gateway on {host}:{port} -> {BACKEND} (receipts -> {LEDGER})")
-        ThreadingHTTPServer((host, port), _handler(digest)).serve_forever()
+        print(f"receipt-gateway on {host}:{port} -> {BACKEND} (receipts -> {LEDGER}; "
+              f"{len(_DIGEST_MAP)} mapped model(s){', +single' if _single_digest() else ''})")
+        ThreadingHTTPServer((host, port), _handler()).serve_forever()
         return 0
     print("usage: receipt_gateway.py --serve | --selftest", file=sys.stderr)
     return 2
