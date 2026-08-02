@@ -2,7 +2,7 @@ VENV ?= .venv
 PY ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-host-interfaces validate-workspace-ops validate-model-plane validate-inference-emitter clean
+.PHONY: help doctor venv deps validate validate-fog-node check-fog-node-host validate-host-interfaces validate-workspace-ops validate-model-plane validate-inference-emitter validate-live-receipts clean
 
 help:
 	@echo "Targets:"
@@ -15,6 +15,7 @@ help:
 	@echo "  make validate-workspace-ops - validate workspace-ops fixtures and conformance"
 	@echo "  make validate-model-plane - validate Model Plane conformance (receipt/unsigned-model/residency; good pass / bad fail)"
 	@echo "  make validate-inference-emitter - self-test the InferenceReceipt emitter + hash-chained ledger"
+	@echo "  make validate-live-receipts - validate the committed real-completion receipt ledger"
 	@echo "  make clean               - remove venv and caches"
 
 doctor:
@@ -58,9 +59,14 @@ validate:
 	@$(MAKE) --no-print-directory validate-model-plane PY=$(PY)
 	@echo "--- Validating InferenceReceipt emitter (hash-chained ledger self-test) ---"
 	$(PY) tools/inference_receipt_emitter.py --selftest
+	@echo "--- Validating LIVE inference receipts (real completions) ---"
+	$(PY) tools/validate_live_receipts.py
 
 validate-inference-emitter:
 	$(PY) tools/inference_receipt_emitter.py --selftest
+
+validate-live-receipts:
+	$(PY) tools/validate_live_receipts.py
 
 validate-model-plane:
 	@echo "GOOD model-plane fixtures (must pass):"
