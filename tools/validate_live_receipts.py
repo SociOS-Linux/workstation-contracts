@@ -32,19 +32,32 @@ LEDGER = ROOT / "evidence" / "model-plane" / "live-inference-ledger.jsonl"
 
 
 def main() -> int:
+    # Usage/infra errors (exit 2): missing/unreadable/malformed inputs.
     if not LEDGER.exists():
         print(f"ERR: {LEDGER} not found", file=sys.stderr)
         return 2
-    schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
-    jsonschema.Draft202012Validator.check_schema(schema)
+    try:
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        jsonschema.Draft202012Validator.check_schema(schema)
+    except (OSError, json.JSONDecodeError, jsonschema.exceptions.SchemaError) as exc:
+        print(f"ERR: cannot load InferenceReceipt schema: {exc}", file=sys.stderr)
+        return 2
     validator = jsonschema.Draft202012Validator(schema)
+    try:
+        entries = [json.loads(l) for l in LEDGER.read_text(encoding="utf-8").splitlines() if l.strip()]
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"ERR: cannot read/parse ledger: {exc}", file=sys.stderr)
+        return 2
+    if not entries:
+        print("ERR: live ledger is empty", file=sys.stderr)
+        return 2
 
+    # Conformance/chain failures (exit 1).
     ok, msg = verify_ledger(LEDGER, validator)
     if not ok:
         print(f"FAIL live ledger: {msg}", file=sys.stderr)
         return 1
 
-    entries = [json.loads(l) for l in LEDGER.read_text(encoding="utf-8").splitlines() if l.strip()]
     digests = {e["baseModelDigest"] for e in entries}
     print(f"OK live receipts: {msg}")
     print(f"    {len(entries)} real InferenceReceipts, real model digest(s): "

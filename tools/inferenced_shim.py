@@ -63,9 +63,21 @@ def main(argv: list[str]) -> int:
     digest = file_digest(args.model)
     print(f"model {args.model.name}  real digest {digest}")
 
-    prompts = (args.prompts_file.read_text(encoding="utf-8").splitlines()
-               if args.prompts_file else DEFAULT_PROMPTS)
-    prompts = [p.strip() for p in prompts if p.strip()]
+    if args.prompts_file:
+        if not args.prompts_file.exists():
+            print(f"ERR: prompts file not found: {args.prompts_file}", file=sys.stderr)
+            return 2
+        try:
+            raw = args.prompts_file.read_text(encoding="utf-8").splitlines()
+        except OSError as exc:
+            print(f"ERR: cannot read prompts file: {exc}", file=sys.stderr)
+            return 2
+    else:
+        raw = DEFAULT_PROMPTS
+    prompts = [p.strip() for p in raw if p.strip()]
+    if not prompts:
+        print("ERR: no prompts", file=sys.stderr)
+        return 2
 
     for p in prompts:
         completion = run_completion(args.model, p, args.n)
