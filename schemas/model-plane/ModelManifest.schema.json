@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.srcos.ai/v2/ModelManifest.json",
+  "title": "ModelManifest",
+  "description": "VENDORED from SourceOS-Linux/sourceos-spec (Tranche 7, canonical owner). Content-addressed store manifest for a base model in the Model Plane store (Tranche 7, T7-2). Sits at /var/lib/sourceos/models/base/sha256-<digest>/manifest.json and describes the weights at rest: architecture, quantization, tokenizer digest, format, and the detached signature. Distinct from SourceOSModelCarryRef (a governance/carry *reference* with policy, which points AT a manifest digest) and from ArtifactManifest/PackageManifest (generic artifacts). No model loads without signature verification (SEAM-014), so a valid manifest MUST carry signature info; and it MUST declare a license so the MIT/Apache-only estate rule is checkable before wiring.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "type",
+    "specVersion",
+    "modelDigest",
+    "architecture",
+    "format",
+    "quantization",
+    "license",
+    "signature"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^urn:srcos:model-manifest:",
+      "description": "Stable URN identifier. Pattern: urn:srcos:model-manifest:<local-id>"
+    },
+    "type": {
+      "const": "ModelManifest",
+      "description": "Discriminator constant \u2014 always \"ModelManifest\"."
+    },
+    "specVersion": {
+      "type": "string",
+      "description": "Spec version of this document, e.g. \"2.1.0\"."
+    },
+    "modelDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "Content address of the model weights \u2014 the directory key in the content-addressed store."
+    },
+    "displayName": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Human-readable model name, e.g. \"generalist-3b\"."
+    },
+    "architecture": {
+      "type": "string",
+      "description": "Model architecture family, e.g. llama, qwen2, gemma2, phi3."
+    },
+    "parameterCount": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "Approximate parameter count, or null when unknown."
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "gguf",
+        "safetensors",
+        "mlx",
+        "onnx"
+      ],
+      "description": "On-disk weight format."
+    },
+    "quantization": {
+      "type": "string",
+      "description": "Quantization/precision label, e.g. q4_k_m, q2_k, int8, mixed-2-4bit, bf16."
+    },
+    "tokenizerDigest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[a-fA-F0-9]{64}$",
+      "description": "Content-addressed digest of the tokenizer, or null when the tokenizer is embedded in the weights."
+    },
+    "contextLength": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "Maximum context length in tokens, or null when unknown."
+    },
+    "defaultTier": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "T0",
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        null
+      ],
+      "description": "The Model Plane tier this model is normally resident at."
+    },
+    "modalities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Modalities the model serves. When present, at least one, no duplicates.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "text",
+          "code",
+          "embedding",
+          "reranking",
+          "vision",
+          "audio",
+          "video",
+          "multimodal"
+        ]
+      }
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier for the model weights, e.g. \"Apache-2.0\", \"MIT\". Required so the estate's MIT/Apache-only rule can be enforced before a model is wired; use \"LicenseRef-<name>\" for non-SPDX licenses (e.g. LicenseRef-Gemma, LicenseRef-Llama-Community), which are NOT MIT/Apache and must be flagged."
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "keyId",
+        "signatureDigest"
+      ],
+      "description": "Detached-signature descriptor. Required \u2014 no model loads without signature verification against the trust store (SEAM-014).",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "description": "Signature algorithm, e.g. ed25519, ecdsa-p256, rsa-pss-sha256."
+        },
+        "keyId": {
+          "type": "string",
+          "description": "Trust-store key identifier that must verify this signature."
+        },
+        "signatureDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$",
+          "description": "Digest of the detached signature blob (signature.sig) stored beside the manifest."
+        }
+      }
+    },
+    "carryRefs": {
+      "type": "array",
+      "description": "Optional back-links to SourceOSModelCarryRef URNs that carry this model.",
+      "items": {
+        "type": "string",
+        "pattern": "^urn:srcos:model-carry-ref:"
+      }
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "description": "Evidence URNs or content hashes for provenance, checksums, and quantization procedure.",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

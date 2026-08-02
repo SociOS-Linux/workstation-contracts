@@ -1,0 +1,27 @@
+{
+  "id": "urn:srcos:model-manifest:generalist-3b-q4k",
+  "type": "ModelManifest",
+  "specVersion": "2.1.0",
+  "modelDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "displayName": "generalist-3b",
+  "architecture": "llama",
+  "parameterCount": 3200000000,
+  "format": "gguf",
+  "quantization": "q4_k_m",
+  "tokenizerDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "contextLength": 8192,
+  "defaultTier": "T1",
+  "modalities": [
+    "text"
+  ],
+  "license": "Apache-2.0",
+  "signature": {
+    "algorithm": "ed25519",
+    "keyId": "srcos-model-signing-2026",
+    "signatureDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "carryRefs": [
+    "urn:srcos:model-carry-ref:generalist-3b-q4k"
+  ],
+  "evidenceRefs": []
+}
